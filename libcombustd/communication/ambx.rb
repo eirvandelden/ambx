@@ -61,9 +61,8 @@ class Ambx
           @handle.auto_detach_kernel_driver = true
             retries += 1
             retry
-          else
-            return false
-          end
+        else
+          return false
         end
       end
     end
