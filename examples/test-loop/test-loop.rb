@@ -2,7 +2,7 @@
 # loops a green light from left to right, and then a blue one from right to left
 
 # put in our requirements.
-require '../../libcombustd/libcombustd';
+require "../../libcombustd/libcombustd"
 
 puts "\nRunning test-loop\n"
 
@@ -11,7 +11,7 @@ puts "\nRunning test-loop\n"
 
 if Ambx.connect
   if Ambx.open
-    while (true)
+    while true
       # First half of loop, GREEN from left to right
       Ambx.write([0xA1, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00])
       Ambx.write([0xA1, Lights::WWLEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0xCC, 0x00, 0x00])

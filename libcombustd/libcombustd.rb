@@ -5,11 +5,11 @@ REQUIREMENTPATH = File.dirname(__FILE__)
 require "libusb"
 
 # Classes for definitions
-require REQUIREMENTPATH + '/data/protocoldefinitions'
-require REQUIREMENTPATH + '/data/lights'
+require REQUIREMENTPATH + "/data/protocoldefinitions"
+require REQUIREMENTPATH + "/data/lights"
 
 # Classes for logic
-require REQUIREMENTPATH + '/communication/ambx'
+require REQUIREMENTPATH + "/communication/ambx"
 
 # Classes for errors
 class CannotClaimInterfaceError < StandardError; end

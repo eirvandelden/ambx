@@ -8,11 +8,11 @@ puts "Looking for support ?\nChat: irc.oceanius.com #dev\nMail: combustd@sexybig
 
 if Ambx.connect
   if Ambx.open
-      Ambx.write([0xA1, 0x0B, 0x03, Integer(ARGV[0]), Integer(ARGV[1]), Integer(ARGV[2])])
-      Ambx.write([0xA1, 0x2B, 0x03, Integer(ARGV[0]), Integer(ARGV[1]), Integer(ARGV[2])])
-      Ambx.write([0xA1, 0x3B, 0x03, Integer(ARGV[0]), Integer(ARGV[1]), Integer(ARGV[2])])
-      Ambx.write([0xA1, 0x4B, 0x03, Integer(ARGV[0]), Integer(ARGV[1]), Integer(ARGV[2])])
-      Ambx.write([0xA1, 0x1B, 0x03, Integer(ARGV[0]), Integer(ARGV[1]), Integer(ARGV[2])])
+    Ambx.write([0xA1, 0x0B, 0x03, Integer(ARGV[0]), Integer(ARGV[1]), Integer(ARGV[2])])
+    Ambx.write([0xA1, 0x2B, 0x03, Integer(ARGV[0]), Integer(ARGV[1]), Integer(ARGV[2])])
+    Ambx.write([0xA1, 0x3B, 0x03, Integer(ARGV[0]), Integer(ARGV[1]), Integer(ARGV[2])])
+    Ambx.write([0xA1, 0x4B, 0x03, Integer(ARGV[0]), Integer(ARGV[1]), Integer(ARGV[2])])
+    Ambx.write([0xA1, 0x1B, 0x03, Integer(ARGV[0]), Integer(ARGV[1]), Integer(ARGV[2])])
     Ambx.close
   else
     puts "Unable to open the discovered device"
@@ -20,4 +20,3 @@ if Ambx.connect
 else
   puts "Unable to find a ambx device"
 end
-
