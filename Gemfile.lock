@@ -1,0 +1,17 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    ffi (1.15.5)
+    libusb (0.6.4)
+      ffi (~> 1.0)
+      mini_portile2 (~> 2.1)
+    mini_portile2 (2.8.0)
+
+PLATFORMS
+  arm64-darwin-21
+
+DEPENDENCIES
+  libusb
+
+BUNDLED WITH
+   2.3.15
