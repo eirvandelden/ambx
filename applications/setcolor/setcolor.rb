@@ -1,6 +1,4 @@
-REQUIREMENTS = File.dirname(__FILE__)
-
-require REQUIREMENTS + "/../../libcombustd/libcombustd"
+require_relative "../../libcombustd/libcombustd"
 
 puts "\nsetcolor - a small utility to configure a set of Philips Ambx lights to a specific color.\n"
 puts "See README and docs/ for faq, usage and support.\n\n"
