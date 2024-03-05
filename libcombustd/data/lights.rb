@@ -8,4 +8,11 @@ class Lights
   WWLEFT   = 0x2B
   WWCENTER = 0x3B
   WWRIGHT  = 0x4B
+
+  # Fans
+  LEFT_FAN  = 0x5B
+  RIGHT_FAN = 0x6B
+
+  # Keyboard rumble
+  RUMBLE = 0x7B
 end
