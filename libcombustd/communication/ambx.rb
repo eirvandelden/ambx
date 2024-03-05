@@ -38,36 +38,28 @@ class Ambx
   # Open the device if it has been connected before.
   # If the device hasn't been opened yet, try to open it otherwise fail
   def self.open
-    if @device.nil?
-      if !Ambx.connect
-        return false
-      end
-    end
+    return false if @device.nil? && !Ambx.connect
 
-    unless @device.nil?
-      @handle = @device.open
-      # we retry a few times to open the device or kill it
-      unless @handle.nil?
-        retries = 0
+    @handle = @device.open
+    # we retry a few times to open the device or kill it
+    unless @handle.nil?
+      retries = 0
+      begin
         begin
-          begin
-            error_code = @handle.claim_interface(0)
-          rescue ArgumentError
-          end
-
-          raise CannotClaimInterfaceError if error_code.nil? # TODO: libusb doesn't return anything on error
-          return true
-        rescue CannotClaimInterfaceError
-          @handle.auto_detach_kernel_driver = true
-          retries                          += 1
-          retry
-        else
-          return false
+          error_code = @handle.claim_interface(0)
+        rescue ArgumentError
         end
+
+        raise CannotClaimInterfaceError if error_code.nil? # TODO: libusb doesn't return anything on error
+        return true
+      rescue CannotClaimInterfaceError
+        @handle.auto_detach_kernel_driver = true
+        retries                          += 1
+        retry
+      else
+        false
       end
     end
-
-    false
   end
 
   # Close the device if it is open.
