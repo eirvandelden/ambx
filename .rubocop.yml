@@ -1,0 +1,241 @@
+require:
+  - rubocop-minitest
+  - rubocop-packaging
+  - rubocop-performance
+  - rubocop-rails
+  - rubocop-rspec
+
+AllCops:
+  TargetRubyVersion: 3.0
+  # RuboCop has a bunch of cops enabled by default. This setting tells RuboCop
+  # to ignore them, so only the ones explicitly set in this file are enabled.
+  DisabledByDefault: true
+  SuggestExtensions: true
+
+  Exclude:
+    - '**/db/**/*schema.rb'
+    - '**/db/schema.rb'
+    - '**/node_modules/**/*'
+    - '**/templates/**/*'
+    - '**/tmp/**/*'
+    - '**/vendor/**/*'
+    - 'actionmailbox/test/dummy/**/*'
+    - 'actionpack/lib/action_dispatch/journey/parser.rb'
+    - 'actiontext/test/dummy/**/*'
+    - 'bin/**/*'
+
+  NewCops: enable ## Cops that need decisions are enabled by default
+
+# Layout
+Layout/CaseIndentation: # Align `when` with `case`.
+  Enabled: true
+Layout/ClosingHeredocIndentation:
+  Enabled: true
+Layout/ClosingParenthesisIndentation:
+  Enabled: true
+Layout/CommentIndentation: # Align comments with method definitions.
+  Enabled: true
+Layout/ElseAlignment:
+  Enabled: true
+Layout/EndAlignment:  # Align `end` with the matching keyword or starting expression except for assignments, where it should be aligned with the LHS.
+  Enabled: true
+  AutoCorrect: true
+  EnforcedStyleAlignWith: variable
+Layout/EmptyLineAfterMagicComment:
+  Enabled: true
+Layout/EmptyLinesAroundAccessModifier:
+  Enabled: true
+  EnforcedStyle: only_before
+Layout/EmptyLinesAroundBlockBody:
+  Enabled: true
+Layout/EmptyLinesAroundClassBody: # In a regular class definition, no empty lines around the body.
+  Enabled: true
+Layout/EmptyLinesAroundMethodBody: # In a regular method definition, no empty lines around the body.
+  Enabled: true
+Layout/EmptyLinesAroundModuleBody: # In a regular module definition, no empty lines around the body.
+  Enabled: true
+Layout/EndOfLine:
+  Enabled: true
+Layout/ExtraSpacing:
+  Enabled: true
+  AllowForAlignment: true
+  AllowBeforeTrailingComments: false
+  ForceEqualSignAlignment: true
+# Method definitions after `private` or `protected` isolated calls need one extra level of indentation.
+Layout/IndentationConsistency:
+  Enabled: true
+  EnforcedStyle: indented_internal_methods
+Layout/IndentationStyle: # Detect hard tabs, no hard tabs.
+  Enabled: true
+Layout/IndentationWidth: # Two spaces, no tabs (for indentation).
+  Enabled: true
+Layout/LeadingCommentSpace:
+  Enabled: true
+Layout/LineLength:
+  Max: 120
+Layout/MultilineMethodCallIndentation:
+  Enabled: true
+  EnforcedStyle: aligned
+  IndentationWidth: ~
+Layout/SpaceAfterColon:
+  Enabled: true
+Layout/SpaceAfterComma:
+  Enabled: true
+Layout/SpaceAfterSemicolon:
+  Enabled: true
+Layout/SpaceAroundEqualsInParameterDefault:
+  Enabled: true
+Layout/SpaceAroundKeyword:
+  Enabled: true
+Layout/SpaceAroundOperators:
+  Enabled: true
+Layout/SpaceBeforeBlockBraces: # Use `foo {}` not `foo{}`.
+  Enabled: true
+Layout/SpaceBeforeComma:
+  Enabled: true
+Layout/SpaceBeforeComment:
+  Enabled: true
+Layout/SpaceBeforeFirstArg:
+  Enabled: true
+Layout/SpaceInsideBlockBraces: # Use `foo { bar }` not `foo {bar}`.
+  Enabled: true
+  EnforcedStyleForEmptyBraces: space
+Layout/SpaceInsideHashLiteralBraces: # Use `{ a: 1 }` not `{a:1}`.
+  Enabled: true
+Layout/SpaceInsideParens:
+  Enabled: true
+Layout/TrailingEmptyLines: # Empty lines should not have any spaces.
+  Enabled: true
+Layout/TrailingWhitespace: # No trailing whitespace.
+  Enabled: true
+
+# Lint
+Lint/AmbiguousOperator:
+  Enabled: true
+Lint/AmbiguousRegexpLiteral:
+  Enabled: true
+Lint/DeprecatedClassMethods:
+  Enabled: true
+Lint/DuplicateRequire:
+  Enabled: true
+Lint/ErbNewArguments:
+  Enabled: true
+Lint/RedundantStringCoercion:
+  Enabled: true
+Lint/RequireParentheses: # Use my_method(my_arg) not my_method( my_arg ) or my_method my_arg.
+  Enabled: true
+Lint/UriEscapeUnescape:
+  Enabled: true
+Lint/UselessAssignment:
+  Enabled: true
+
+
+# Metrics
+Metrics/AbcSize:
+  Max: 20
+Metrics/BlockLength:
+  Exclude:
+    - spec/**/*_spec.rb
+Metrics/MethodLength:
+  Max: 20
+
+# Performance
+Performance:
+  Exclude:
+    - '**/test/**/*'
+
+# Style
+Style/AndOr: # Prefer &&/|| over and/or.
+  Enabled: true
+Style/ColonMethodCall: # Prefer Foo.method over Foo::method
+  Enabled: true
+Style/DefWithParentheses:
+  Enabled: true
+Style/Documentation:
+  Enabled: false
+Style/ExplicitBlockArgument:
+  Enabled: true
+Style/FrozenStringLiteralComment:
+  Enabled: false
+Style/HashSyntax: # Use Ruby >= 1.9 syntax for hashes. Prefer { a: :b } over { :a => :b }.
+  Enabled: true
+Style/HashTransformKeys:
+  Enabled: true
+Style/HashTransformValues:
+  Enabled: true
+Style/MethodDefParentheses: # Defining a method with parameters needs parentheses.
+  Enabled: true
+Style/NumericLiteralPrefix:
+  Enabled: false
+Style/NumericLiterals:
+  Enabled: false
+Style/ParenthesesAroundCondition:
+  Enabled: true
+Style/RedundantBegin:
+  Enabled: true
+Style/RedundantFreeze:
+  Enabled: true
+Style/RedundantPercentQ: # Use quotes for string literals when they are enough.
+  Enabled: true
+Style/RedundantReturn:
+  Enabled: true
+  AllowMultipleReturnValues: true
+Style/RedundantRegexpEscape:
+  Enabled: true
+Style/Semicolon:
+  Enabled: true
+  AllowAsExpressionSeparator: true
+Style/StringLiterals:
+  Enabled: true
+  EnforcedStyle: double_quotes
+  ConsistentQuotesInMultiline: false
+Style/TernaryParentheses:
+  EnforcedStyle: require_parentheses_when_complex
+Style/TrivialAccessors:
+  Enabled: true
+
+# Extensions
+## Minitest
+Minitest/UnreachableAssertion:
+  Enabled: true
+
+## Rails
+Rails/AssertNot: # Prefer assert_not over assert !
+  Include:
+    - '**/test/**/*'
+Rails/RefuteMethods: # Prefer assert_not_x over refute_x
+  Include:
+    - '**/test/**/*'
+Rails/IndexBy:
+  Enabled: true
+Rails/IndexWith:
+  Enabled: true
+
+## Performance
+Performance/BindCall:
+  Enabled: true
+Performance/DeletePrefix:
+  Enabled: true
+Performance/DeleteSuffix:
+  Enabled: true
+Performance/EndWith:
+  Enabled: true
+Performance/FlatMap:
+  Enabled: true
+Performance/MapCompact:
+  Enabled: true
+Performance/RedundantMerge:
+  Enabled: true
+Performance/RegexpMatch:
+  Enabled: true
+Performance/ReverseEach:
+  Enabled: true
+Performance/SelectMap:
+  Enabled: true
+Performance/StartWith:
+  Enabled: true
+Performance/StringReplacement:
+  Enabled: true
+Performance/UnfreezeString:
+  Enabled: true
+
