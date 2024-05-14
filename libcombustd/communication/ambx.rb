@@ -102,11 +102,11 @@ class Ambx
 
   # Write a set of bytes to the usb device, this is our command string. Try to open it if necessarily.
   def self.write_device(handle, bytes)
-    handle.interrupt_transfer({
+    handle.interrupt_transfer(
       endpoint: ProtocolDefinitions::ENDPOINT_OUT,
       dataOut: bytes.pack("C*"),
       timeout: 0
-    })
+    )
     # quick fix to not immediately segfault, but wait for segfault when application quits.
     # need a fix somewhere in ruby_usb, see issue #1 on google code.
   rescue Errno::ENXIO
