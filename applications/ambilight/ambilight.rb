@@ -45,7 +45,7 @@ def average_color(image, x_start, y_start, width, height)
   avg_g = (total_g / pixel_count).round
   avg_b = (total_b / pixel_count).round
 
-  [avg_r, avg_g, avg_b]
+  [ avg_r, avg_g, avg_b ]
 end
 
 # Divide the screen into zones and calculate the average color for each
@@ -63,9 +63,9 @@ def calculate_zone_colors(image)
 
   (0...ZONE_COUNT).each do |i|
     # threads << Thread.new do
-      x_start        = i * zone_width
-      y_start        = 0 # Full height of the screen for each zone
-      zone_colors[i] = average_color(image, x_start, y_start, zone_width, zone_height)
+    x_start        = i * zone_width
+    y_start        = 0 # Full height of the screen for each zone
+    zone_colors[i] = average_color(image, x_start, y_start, zone_width, zone_height)
     # end
   end
 
@@ -76,21 +76,21 @@ end
 
 # Update lights using the AmBX repository
 def update_lights(zone_colors)
-    if Ambx.open
-      light_mapping = {
-        "0": Lights::LEFT,
-        "1": Lights::WWLEFT,
-        "2": Lights::WWCENTER,
-        "3": Lights::WWRIGHT,
-        "4": Lights::RIGHT
-      }
-      zone_colors.each_with_index do |color, index|
-        r, g, b = color
-        # Assuming AmBX has a method `set_light(zone, r, g, b)` to update light colors
-        Ambx.write([light_mapping[index.to_s.to_sym], 0x03, r, g, b]) # Send the RGB color to the corresponding light
-      end
-      Ambx.close
+  if Ambx.open
+    light_mapping = {
+      "0": Lights::LEFT,
+      "1": Lights::WWLEFT,
+      "2": Lights::WWCENTER,
+      "3": Lights::WWRIGHT,
+      "4": Lights::RIGHT
+    }
+    zone_colors.each_with_index do |color, index|
+      r, g, b = color
+      # Assuming AmBX has a method `set_light(zone, r, g, b)` to update light colors
+      Ambx.write([ light_mapping[index.to_s.to_sym], 0x03, r, g, b ]) # Send the RGB color to the corresponding light
     end
+    Ambx.close
+  end
 end
 
 # Graceful shutdown flag
