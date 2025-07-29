@@ -5,14 +5,20 @@ GEM
     libusb (0.7.1)
       ffi (~> 1.0)
       mini_portile2 (~> 2.1)
+    logger (1.7.0)
     mini_portile2 (2.8.6)
+    ruby-vips (2.2.4)
+      ffi (~> 1.12)
+      logger
 
 PLATFORMS
   arm64-darwin-21
   arm64-darwin-23
+  arm64-darwin-24
 
 DEPENDENCIES
   libusb
+  ruby-vips
 
 BUNDLED WITH
-   2.3.15
+   2.7.1
