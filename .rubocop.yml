@@ -2,8 +2,3 @@ inherit_from:
   - .rubocop_todo.yml
   - ~/.rubocop.yml
 
-Style/FrozenStringLiteralComment:
-  EnforcedStyle: always
-  Exclude:
-    - "db/**/*.rb"
-    - "**/*/db/**/.rb"
