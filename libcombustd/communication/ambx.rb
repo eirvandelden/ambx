@@ -1,14 +1,13 @@
 require "singleton"
 
-# Ambx class is a singleton to manage all traffic flowing to the ambx device.
-# Handles all connections and errors, which can be boolean checked by the application.
-
-# Example usage:
-# Ambx.open
-# Ambx.connect
-# Ambx.write([0x01, Lights::WWCENTER, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00])
-# Ambx.close
-
+# Ambx manages all traffic flowing to the amBX device.
+# Handles all connections and errors, which can be boolean-checked by the application.
+# @example Basic usage
+#   Ambx.open
+#   Ambx.connect
+#   Ambx.write([0x01, Lights::WWCENTER, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00])
+#   Ambx.close
+# @note This class is a Singleton; use class methods or Ambx.instance.
 class Ambx
   include Singleton
 
@@ -89,7 +88,14 @@ class Ambx
     end
   end
 
-  # Write a set of bytes to the usb device, this is our command string. Try to open it if necessarily.
+  # Writes a set of bytes to the USB device.
+  # Sends the provided bytes to all currently opened device handles.
+  # If no handles are available, the call performs no action.
+  #
+  # @param [Array<Integer>] bytes Sequence of bytes (0-255) to send to the device.
+  # @return [void]
+  # @example Set WW center light to green
+  #   Ambx.write([0x01, Lights::WWCENTER, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00])
   def self.write(bytes)
     return if @handles.all? { |handle| handle.nil? } # we lost it. see issue #1 on google code.
 
