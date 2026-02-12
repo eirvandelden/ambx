@@ -1,0 +1,30 @@
+# LED brightness compensation (green LEDs are dimmer)
+green_boost: 2.2  # Multiply green values by this factor (1.0 = no boost)
+
+colors:
+  - name: "Warm White"
+    rgb: [255, 200, 150]
+  - name: "Cool White"
+    rgb: [200, 220, 255]
+  - name: "Soft Red"
+    rgb: [255, 80, 80]
+  - name: "Ocean Blue"
+    rgb: [0, 120, 255]
+  - name: "Forest Green"
+    rgb: [50, 180, 50]
+  - name: "Sunset Orange"
+    rgb: [255, 120, 40]
+  - name: "Lavender"
+    rgb: [180, 140, 255]
+  - name: "Golden Hour"
+    rgb: [255, 180, 60]
+
+fan_speeds:
+  - name: "Fan: Off"
+    speed: 0
+  - name: "Fan: Low"
+    speed: 85
+  - name: "Fan: Medium"
+    speed: 170
+  - name: "Fan: High"
+    speed: 255
