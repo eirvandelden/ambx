@@ -4,7 +4,7 @@ require_relative "../../libcombustd/libcombustd"
 require "yaml"
 
 # Load configuration (colors, fan speeds, and green boost)
-CONFIG = YAML.load_file(File.join(__dir__, "config/colors.yml"))
+CONFIG = YAML.safe_load_file(File.join(__dir__, "config/colors.yml"))
 COLORS = CONFIG["colors"]
 FAN_SPEEDS = CONFIG["fan_speeds"]
 GREEN_BOOST = CONFIG["green_boost"] || 1.0
@@ -63,9 +63,12 @@ print_menu(connected)
 while (selection = gets&.chomp)
   case selection
   when "Turn Off Lights"
-    if Ambx.open
+    # Attempt to open connection with reconnection fallback
+    if Ambx.connect && Ambx.open
       set_all_lights(0, 0, 0)
       connected = true
+    else
+      connected = false
     end
   when "QUIT"
     exit
@@ -73,19 +76,23 @@ while (selection = gets&.chomp)
     # Check if it's a fan speed selection
     fan = FAN_SPEEDS.find { |f| f["name"] == selection }
     if fan
-      if Ambx.open
+      # Attempt to open connection with reconnection fallback
+      if Ambx.connect && Ambx.open
         set_fan_speed(fan["speed"])
         connected = true
+      else
+        connected = false
       end
     else
       # Check if it's a color selection
       color = COLORS.find { |c| c["name"] == selection }
       if color
-        if Ambx.open
+        # Attempt to open connection with reconnection fallback
+        if Ambx.connect && Ambx.open
           set_all_lights(*color["rgb"])
           connected = true
         else
-          connected = Ambx.connect && Ambx.open
+          connected = false
         end
       end
     end
