@@ -1,0 +1,95 @@
+#!/usr/bin/env ruby
+
+require_relative "../../libcombustd/libcombustd"
+require "yaml"
+
+# Load configuration (colors, fan speeds, and green boost)
+CONFIG = YAML.load_file(File.join(__dir__, "config/colors.yml"))
+COLORS = CONFIG["colors"]
+FAN_SPEEDS = CONFIG["fan_speeds"]
+GREEN_BOOST = CONFIG["green_boost"] || 1.0
+
+# Initialize USB connection
+def init_ambx
+  return true if Ambx.connect && Ambx.open
+  false
+end
+
+# Set all lights to color (sent to both Ambx devices automatically)
+# Applies green boost to compensate for dimmer green LEDs
+def set_all_lights(r, g, b)
+  # Boost green channel and cap at 255
+  g_boosted = [ g * GREEN_BOOST, 255 ].min.round
+
+  [ Lights::LEFT, Lights::WWLEFT, Lights::WWCENTER,
+   Lights::WWRIGHT, Lights::RIGHT ].each do |light_id|
+    Ambx.write([ 0xA1, light_id, 0x03, r, g_boosted, b ])
+  end
+  Ambx.close
+end
+
+# Set fan speed (0-255) - user has 1 set of fans (LEFT_FAN)
+def set_fan_speed(speed)
+  Ambx.write([ 0xA1, Lights::LEFT_FAN, 0x03, 0, 0, speed ])
+  Ambx.close
+end
+
+# Output menu structure
+def print_menu(connected)
+  status = connected ? "✓ Connected" : "⚠️ Disconnected"
+  puts "Ambx Lights (#{status})"
+  puts "---"
+  puts "Turn Off Lights" if connected
+  puts "---" if connected
+
+  COLORS.each { |color| puts color["name"] }
+
+  if connected
+    puts "---"
+    FAN_SPEEDS.each { |fan| puts fan["name"] }
+  end
+
+  puts "---"
+  puts "QUIT"
+end
+
+# Main loop
+connected = Ambx.connect
+
+# Print initial menu
+print_menu(connected)
+
+# Handle menu selections
+while (selection = gets&.chomp)
+  case selection
+  when "Turn Off Lights"
+    if Ambx.open
+      set_all_lights(0, 0, 0)
+      connected = true
+    end
+  when "QUIT"
+    exit
+  else
+    # Check if it's a fan speed selection
+    fan = FAN_SPEEDS.find { |f| f["name"] == selection }
+    if fan
+      if Ambx.open
+        set_fan_speed(fan["speed"])
+        connected = true
+      end
+    else
+      # Check if it's a color selection
+      color = COLORS.find { |c| c["name"] == selection }
+      if color
+        if Ambx.open
+          set_all_lights(*color["rgb"])
+          connected = true
+        else
+          connected = Ambx.connect && Ambx.open
+        end
+      end
+    end
+  end
+
+  print_menu(connected)
+end
