@@ -34,7 +34,7 @@ class Ambx
   # Open the device if it has been connected before.
   # If the device hasn't been opened yet, try to open it otherwise fail
   def self.open
-    return false if @devices.all? { |dev| dev.nil? } && !Ambx.connect
+    return false if (@devices.nil? || @devices.all? { |dev| dev.nil? }) && !Ambx.connect
 
     @handles = @devices.map { |device| device.open }
     # we retry a few times to open the device or kill it
@@ -64,7 +64,7 @@ class Ambx
   # Close the device if it is open.
   # set clearLights to true to try and set the lights back to 0x00
   def self.close (clearLights = false)
-    return if @handles.all? { |handle| handle.nil? }
+    return if @handles.nil? || @handles.all? { |handle| handle.nil? }
 
     @handles.each { |handle| Ambx.close_device(handle, clearLights) }
 
@@ -97,7 +97,7 @@ class Ambx
   # @example Set WW center light to green
   #   Ambx.write([0x01, Lights::WWCENTER, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00])
   def self.write(bytes)
-    return if @handles.all? { |handle| handle.nil? } # we lost it. see issue #1 on google code.
+    return if @handles.nil? || @handles.all? { |handle| handle.nil? } # we lost it. see issue #1 on google code.
 
     @handles.each do |handle|
       next if handle.nil?
