@@ -1,0 +1,22 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "Ambx",
+    "ambx",
+    "libcombustd",
+    "etienne",
+    "vandelden",
+    "eirvandelden",
+    "menubar",
+    "Platypus",
+    "libusb",
+    "Caskroom"
+  ],
+  "ignorePaths": [
+    "node_modules",
+    ".git",
+    "vendor",
+    "tmp"
+  ]
+}
