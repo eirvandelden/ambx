@@ -1,10 +1,20 @@
 #!/usr/bin/env ruby
 
-require_relative "../../libcombustd/libcombustd"
+# Handle paths for both development and Platypus bundle
+if File.exist?(File.join(__dir__, "libcombustd"))
+  # Running in Platypus bundle - files are in Resources/
+  require_relative "libcombustd/libcombustd"
+  CONFIG_PATH = File.join(__dir__, "colors.yml")
+else
+  # Running in development - use relative paths to project structure
+  require_relative "../../libcombustd/libcombustd"
+  CONFIG_PATH = File.join(__dir__, "config/colors.yml")
+end
+
 require "yaml"
 
 # Load configuration (colors, fan speeds, and green boost)
-CONFIG = YAML.safe_load_file(File.join(__dir__, "config/colors.yml"))
+CONFIG = YAML.safe_load_file(CONFIG_PATH)
 COLORS = CONFIG["colors"]
 FAN_SPEEDS = CONFIG["fan_speeds"]
 GREEN_BOOST = CONFIG["green_boost"] || 1.0
