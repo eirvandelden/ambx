@@ -17,7 +17,7 @@ class Ambx
 
   # Find the device by finding it in the device tree, fail if it's not connected
   def self.connect
-    @devices ||= []
+    @devices = []
 
     LIBUSB::Context.new.devices.select do |dev|
       dev.idVendor == ProtocolDefinitions::USB_VENDOR_ID && dev.idProduct == ProtocolDefinitions::USB_PRODUCT_ID
@@ -50,6 +50,7 @@ class Ambx
   # Try to claim interface
   def self.claim_interface(handle)
     retries = 0
+    max_retries = 3
     begin
       error_code = handle.claim_interface(0)
     rescue ArgumentError
@@ -58,9 +59,13 @@ class Ambx
     raise CannotClaimInterfaceError if error_code.nil? # TODO: libusb doesn't return anything on error
     return true
   rescue CannotClaimInterfaceError
-    handle.auto_detach_kernel_driver = true
-    retries                         += 1
-    retry
+    if retries < max_retries
+      handle.auto_detach_kernel_driver = true
+      retries                         += 1
+      retry
+    else
+      false
+    end
   else
     false
   end
