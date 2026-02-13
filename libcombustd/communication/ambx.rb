@@ -17,6 +17,8 @@ class Ambx
 
   # Find the device by finding it in the device tree, fail if it's not connected
   def self.connect
+    @devices ||= []
+
     LIBUSB::Context.new.devices.select do |dev|
       dev.idVendor == ProtocolDefinitions::USB_VENDOR_ID && dev.idProduct == ProtocolDefinitions::USB_PRODUCT_ID
     end.each do |dev|
@@ -29,6 +31,8 @@ class Ambx
 
       true
     end
+
+    !@devices.empty?
   end
 
   # Open the device if it has been connected before.
@@ -70,7 +74,7 @@ class Ambx
 
     @device  = nil
     @handles = nil
-    @devices = nil
+    @devices = []
   end
 
   def self.close_device(handle, clearLights = false)

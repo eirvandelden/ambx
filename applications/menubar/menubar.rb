@@ -54,7 +54,7 @@ def print_menu(connected)
 end
 
 # Main loop
-connected = Ambx.connect
+connected = Ambx.connect && Ambx.open
 
 # Print initial menu
 print_menu(connected)
