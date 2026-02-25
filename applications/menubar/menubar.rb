@@ -1,5 +1,9 @@
 #!/usr/bin/env ruby
 
+# Disable output buffering for Platypus Status Menu
+$stdout.sync = true
+$stderr.sync = true
+
 # Handle paths for both development and Platypus bundle
 if File.exist?(File.join(__dir__, "libcombustd"))
   # Running in Platypus bundle - files are in Resources/
@@ -27,6 +31,7 @@ end
 
 # Set all lights to color (sent to both Ambx devices automatically)
 # Applies green boost to compensate for dimmer green LEDs
+# Returns true if all lights were set successfully, false if connection was lost mid-write
 def set_all_lights(r, g, b)
   # Boost green channel and cap at 255
   g_boosted = [ g * GREEN_BOOST, 255 ].min.round
@@ -34,14 +39,33 @@ def set_all_lights(r, g, b)
   [ Lights::LEFT, Lights::WWLEFT, Lights::WWCENTER,
    Lights::WWRIGHT, Lights::RIGHT ].each do |light_id|
     Ambx.write([ 0xA1, light_id, 0x03, r, g_boosted, b ])
+
+    # Check if connection was lost mid-write (error handler called Ambx.close)
+    # If so, reconnect and retry the full sequence to ensure all lights match
+    unless Ambx.connected?
+      return false unless Ambx.connect && Ambx.open
+      # Retry from the beginning to ensure consistent state across all lights
+      return set_all_lights(r, g, b)
+    end
   end
   Ambx.close
+  true
 end
 
 # Set fan speed (0-255) - user has 1 set of fans (LEFT_FAN)
+# Returns true if fan speed was set successfully, false if connection was lost
 def set_fan_speed(speed)
   Ambx.write([ 0xA1, Lights::LEFT_FAN, 0x03, 0, 0, speed ])
+
+  # Check if connection was lost during write
+  unless Ambx.connected?
+    return false unless Ambx.connect && Ambx.open
+    # Retry the write
+    return set_fan_speed(speed)
+  end
+
   Ambx.close
+  true
 end
 
 # Output menu structure
@@ -75,8 +99,7 @@ while (selection = gets&.chomp)
   when "Turn Off Lights"
     # Attempt to open connection with reconnection fallback
     if Ambx.connect && Ambx.open
-      set_all_lights(0, 0, 0)
-      connected = true
+      connected = set_all_lights(0, 0, 0)
     else
       connected = false
     end
@@ -88,8 +111,7 @@ while (selection = gets&.chomp)
     if fan
       # Attempt to open connection with reconnection fallback
       if Ambx.connect && Ambx.open
-        set_fan_speed(fan["speed"])
-        connected = true
+        connected = set_fan_speed(fan["speed"])
       else
         connected = false
       end
@@ -99,8 +121,7 @@ while (selection = gets&.chomp)
       if color
         # Attempt to open connection with reconnection fallback
         if Ambx.connect && Ambx.open
-          set_all_lights(*color["rgb"])
-          connected = true
+          connected = set_all_lights(*color["rgb"])
         else
           connected = false
         end
