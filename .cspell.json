@@ -11,7 +11,11 @@
     "menubar",
     "Platypus",
     "libusb",
-    "Caskroom"
+    "Caskroom",
+    "WWLEFT",
+    "WWCENTER",
+    "WWRIGHT",
+    "ENXIO"
   ],
   "ignorePaths": [
     "node_modules",

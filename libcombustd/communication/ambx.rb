@@ -70,6 +70,12 @@ class Ambx
     false
   end
 
+  # Check if device handles are currently open and valid
+  # @return [Boolean] true if connected with valid handles, false otherwise
+  def self.connected?
+    !@handles.nil? && !@handles.all? { |handle| handle.nil? }
+  end
+
   # Close the device if it is open.
   # set clearLights to true to try and set the lights back to 0x00
   def self.close (clearLights = false)
