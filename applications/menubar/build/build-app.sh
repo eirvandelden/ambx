@@ -28,11 +28,41 @@ fi
 
 echo "Using Platypus CLI: $PLATYPUS_CLI"
 
+# Check if Platypus CLI resources are installed system-wide
+if [ ! -f "/usr/local/share/platypus/ScriptExec" ] && [[ "$PLATYPUS_CLI" == *"Caskroom"* ]]; then
+    echo ""
+    echo "⚠️  Platypus CLI resources not installed system-wide"
+    echo "Installing CLI tools (requires sudo)..."
+
+    RESOURCES_DIR="$(dirname "$PLATYPUS_CLI")"
+    INSTALL_SCRIPT="$RESOURCES_DIR/InstallCommandLineTool.sh"
+
+    if [ -f "$INSTALL_SCRIPT" ]; then
+        sudo "$INSTALL_SCRIPT" "$RESOURCES_DIR"
+        if [ $? -eq 0 ]; then
+            echo "✓ CLI tools installed successfully"
+        else
+            echo "❌ Failed to install CLI tools"
+            echo "Please run manually:"
+            echo "  sudo $INSTALL_SCRIPT $RESOURCES_DIR"
+            exit 1
+        fi
+    else
+        echo "❌ Install script not found at: $INSTALL_SCRIPT"
+        exit 1
+    fi
+    echo ""
+fi
+
+# Detect Ruby interpreter (use current ruby with gem dependencies)
+RUBY_INTERPRETER="$(which ruby)"
+echo "Using Ruby interpreter: $RUBY_INTERPRETER"
+
 # Build the Ambx Lights app
 "$PLATYPUS_CLI" \
   --name "Ambx Lights" \
   --interface-type "Status Menu" \
-  --interpreter "/usr/bin/ruby" \
+  --interpreter "$RUBY_INTERPRETER" \
   --bundled-file "../../../libcombustd" \
   --bundled-file "../config/colors.yml" \
   --status-item-icon "icon.png" \
