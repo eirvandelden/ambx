@@ -42,16 +42,17 @@ class Ambx
   #
   # Attempts `connect` when no cached devices are present.
   #
-  # @return [Array<Boolean>, false, nil] Claim results.
-  #   Returns false when connect fails, or nil if any handle is nil.
+  # @return [Boolean] true when all handles were opened and claimed.
   def self.open
     return false if (@devices.nil? || @devices.all? { |dev| dev.nil? }) && !Ambx.connect
 
     @handles = @devices.map { |device| device.open }
-    # we retry a few times to open the device or kill it
-    if @handles.none? { |handle| handle.nil? }
-      @handles.each { |handle| Ambx.claim_interface(handle) }
-    end
+    return false if @handles.any? { |handle| handle.nil? }
+
+    return true if @handles.all? { |handle| Ambx.claim_interface(handle) }
+
+    Ambx.close
+    false
   end
 
   # Claims interface 0 on an opened USB handle.
@@ -61,22 +62,21 @@ class Ambx
   # @param handle [LIBUSB::DeviceHandle] Open device handle.
   # @return [Boolean] true when claimed successfully, otherwise false.
   def self.claim_interface(handle)
-    retries    = 0
-    max_retries = 3
-    begin
-      error_code = handle.claim_interface(0)
-    rescue ArgumentError
-    end
+    max_attempts = 4
+    max_attempts.times do |attempt|
+      begin
+        error_code = handle.claim_interface(0)
+      rescue ArgumentError
+        error_code = nil
+      end
 
-    raise Error::CannotClaim if error_code.nil? # TODO: libusb doesn't return anything on error
-    true
-  rescue Error::CannotClaim
-    if retries < max_retries
-      handle.auto_detach_kernel_driver = true
-      retries                         += 1
-      retry
-    else
-      false
+      return true unless error_code.nil?
+
+      if attempt < max_attempts - 1
+        handle.auto_detach_kernel_driver = true
+      else
+        return false
+      end
     end
   end
 
@@ -87,31 +87,37 @@ class Ambx
   def self.close(clearLights = false)
     return if @handles.nil? || @handles.all? { |handle| handle.nil? }
 
-    @handles.each { |handle| Ambx.close_device(handle, clearLights) }
+    Ambx.clear_lights if clearLights
+
+    @handles.each { |handle| Ambx.close_device(handle) }
 
     @device  = nil
     @handles = nil
     @devices = []
   end
 
-  # Closes a single device handle, optionally turning lights off first.
+  # Closes a single device handle.
   #
   # @param handle [LIBUSB::DeviceHandle] Open device handle.
-  # @param clearLights [Boolean] Whether to send "all off" light packets before close.
   # @return [void]
-  def self.close_device(handle, clearLights = false)
-    if clearLights
-      Ambx.write(Packet.set_color(Ambx::Lights::LEFT, 0, 0, 0))
-      Ambx.write(Packet.set_color(Ambx::Lights::WWLEFT, 0, 0, 0))
-      Ambx.write(Packet.set_color(Ambx::Lights::WWCENTER, 0, 0, 0))
-      Ambx.write(Packet.set_color(Ambx::Lights::WWRIGHT, 0, 0, 0))
-      Ambx.write(Packet.set_color(Ambx::Lights::RIGHT, 0, 0, 0))
-    end
+  def self.close_device(handle)
+    return if handle.nil?
 
     begin
       handle.close
     rescue Errno::ENXIO
     end
+  end
+
+  # Sends all-off packets for all known light zones.
+  #
+  # @return [void]
+  def self.clear_lights
+    Ambx.write(Packet.set_color(Ambx::Lights::LEFT, 0, 0, 0))
+    Ambx.write(Packet.set_color(Ambx::Lights::WWLEFT, 0, 0, 0))
+    Ambx.write(Packet.set_color(Ambx::Lights::WWCENTER, 0, 0, 0))
+    Ambx.write(Packet.set_color(Ambx::Lights::WWRIGHT, 0, 0, 0))
+    Ambx.write(Packet.set_color(Ambx::Lights::RIGHT, 0, 0, 0))
   end
 
   # Writes bytes to the USB device.

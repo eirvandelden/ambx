@@ -23,6 +23,8 @@
     "Cyborg",
     "Platypus",
     "oceanius",
-    "replug"
+    "replug",
+    "LIBUSB",
+    "ENXIO"
   ]
 }

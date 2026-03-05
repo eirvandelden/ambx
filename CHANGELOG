@@ -1,3 +1,14 @@
+Version 1.0.0.pre:
+  Pre-release for testing the incompatible library migration introduced in 0.3.
+
+Version 0.3:
+  Extracted `libambx` as the canonical library and application require path.
+  Breaking change (intentional): removed `libcombustd` require paths and legacy constants
+  (`Lights`, `ProtocolDefinitions`, `LEFT_FAN`, `RIGHT_FAN`) in favor of
+  `Ambx::Lights`, `Ambx::Fans`, and `Ambx::Protocol`.
+  Fixed `Ambx.open` to return strict success/failure when interface claiming fails.
+  Fixed `Ambx.close(true)` to clear lights once per close operation with multiple handles.
+
 Version 0.2:
   Added patch from jaaps at xbmc.org forums.
   For configuration see: http://forum.xbmc.org/showthread.php?t=71912&page=2

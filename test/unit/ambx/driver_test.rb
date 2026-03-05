@@ -32,6 +32,30 @@ describe Ambx do
   before { reset_ambx! }
 
   # -------------------------------------------------------------------------
+  describe ".open" do
+    it "returns true when all discovered device handles claim successfully" do
+      good_handle = Object.new
+      good_handle.define_singleton_method(:claim_interface) { |_interface| 0 }
+      good_handle.define_singleton_method(:auto_detach_kernel_driver=) { |_enabled| }
+      fake_device = Object.new
+      fake_device.define_singleton_method(:open) { good_handle }
+      Ambx.instance_variable_set(:@devices, [ fake_device ])
+      _(Ambx.open).must_equal true
+    end
+
+    it "returns false when interface claiming fails" do
+      bad_handle = Object.new
+      bad_handle.define_singleton_method(:claim_interface) { |_interface| nil }
+      bad_handle.define_singleton_method(:auto_detach_kernel_driver=) { |_enabled| }
+      bad_handle.define_singleton_method(:close) { }
+      fake_device = Object.new
+      fake_device.define_singleton_method(:open) { bad_handle }
+      Ambx.instance_variable_set(:@devices, [ fake_device ])
+      _(Ambx.open).must_equal false
+    end
+  end
+
+  # -------------------------------------------------------------------------
   describe ".write" do
     it "does nothing and returns nil when @handles is nil" do
       _(Ambx.write([ 0xA1, 0x0B, 0x03, 0, 0, 0 ])).must_be_nil
@@ -160,6 +184,15 @@ describe Ambx do
         handle.transfers.each do |t|
           _(t[:dataOut].unpack("C*")[0]).must_equal 0xA1
         end
+      end
+
+      it "clears each handle exactly once when multiple handles are open" do
+        h1 = FakeHandle.new
+        h2 = FakeHandle.new
+        Ambx.instance_variable_set(:@handles, [ h1, h2 ])
+        Ambx.close(true)
+        _(h1.transfers.length).must_equal 5
+        _(h2.transfers.length).must_equal 5
       end
     end
   end
