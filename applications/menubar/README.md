@@ -79,9 +79,9 @@ cd applications/menubar/build
 - **menubar.rb** - Main Platypus interface script
 - **config/colors.yml** - Color and fan speed definitions
 - **build/build-app.sh** - Build automation using Platypus
-- **libcombustd/** - USB communication library (bundled in app)
+- **libambx/** - libamBX USB communication library (bundled in app)
 
-The app uses the existing `libcombustd` library for USB device communication.
+The app uses the existing `libamBX` library (`libambx/`) for USB device communication.
 
 ## Troubleshooting
 

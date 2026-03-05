@@ -6,7 +6,7 @@ ZONE_COUNT          = 5
 PIXEL_SAMPLING_RATE = 20 # Process every nth pixel for performance
 
 # Load the AmBX library
-require_relative "../../libcombustd/libcombustd"
+require_relative "../../libambx/libambx"
 
 # Capture a screenshot and load it into memory
 def capture_screenshot
@@ -78,11 +78,11 @@ end
 def update_lights(zone_colors)
   if Ambx.open
     light_mapping = {
-      "0": Lights::LEFT,
-      "1": Lights::WWLEFT,
-      "2": Lights::WWCENTER,
-      "3": Lights::WWRIGHT,
-      "4": Lights::RIGHT
+      "0": Ambx::Lights::LEFT,
+      "1": Ambx::Lights::WWLEFT,
+      "2": Ambx::Lights::WWCENTER,
+      "3": Ambx::Lights::WWRIGHT,
+      "4": Ambx::Lights::RIGHT
     }
     zone_colors.each_with_index do |color, index|
       r, g, b = color

@@ -1,12 +1,195 @@
-Combustd - A crossplatform toolkit for Ambx or compatible devices
+# Ambx — Ruby USB driver and applications for Philips amBX devices
 
-This application has been created in order to make the Ambx product usable on platforms outside the scope of Ambx's target group. Most of the project has been set up to create applications outside the normal usage pattern. Go wild, let your idea's flow. Make that usb controlled build monitor, access the your lights from the web. Use the power of the web to create controllable lights to indicate visitors. Use it for system monitoring.
+By Etienne van Delden de la Haije, Martijn de Boer, and Gert-Jan de Boer. See AUTHORS for details.
 
-If you like this project, please consider how much you could contribute to it.
-All code in this project is licensed under the very liberal and fair BSD license unless specified otherwise, see the LICENSE file for more information.
+A cross-platform Ruby toolkit for controlling Philips amBX USB devices — lights, fans, and rumble — from macOS and Linux.
 
-For dependencies read the file INSTALL.
+Licensed under the BSD license. See LICENSE for details.
+
+---
+
+## Applications
+
+| App | Location | Description |
+|-----|----------|-------------|
+| **menubar** | `applications/menubar/` | macOS status-bar app (Platypus) with color/fan presets |
+| **ambilight** | `applications/ambilight/` | Screen-capture ambient light loop (ruby-vips) |
+| **boblight** | `applications/boblight/` | stdin bridge for the Boblight/XBMC protocol |
+| **setcolor** | `applications/setcolor/setcolor.rb` | One-shot CLI — set all lights to an RGB color |
+| **setfan** | `applications/setcolor/setfan.rb` | One-shot CLI — set fan speed |
+
+---
+
+## Library — libambx
+
+`libambx/` is the canonical USB driver library.
+The published gem includes library code only; files in `applications/` are repository-only and excluded from gem packaging.
+
+### Gem install and import
+
+```ruby
+# Gemfile
+gem "libambx"
+```
+
+### Namespace
+
+| Name | Notes |
+|------|-------|
+| `Ambx::Protocol` | USB IDs, endpoint addresses, opcodes |
+| `Ambx::Lights` | Light address constants |
+| `Ambx::Fans` | Fan address constants |
+| `Ambx::Rumbler` | Keyboard rumbler address constants |
+| `Ambx::Error::CannotClaim` | Raised when interface claim fails |
+| `Ambx::Packet` | Value object for building USB packets |
+
+### Quick start
+
+```ruby
+require "libambx"
+
+Ambx.connect
+Ambx.open
+
+# Build a typed packet (preamble + clamping built in):
+Ambx.write Ambx::Packet.set_color(Ambx::Lights::WWCENTER, 0, 255, 128)
+Ambx.write Ambx::Packet.set_fan(Ambx::Fans::LEFT, 200)
+
+Ambx.close
+
+# Or use raw arrays (backward compatible):
+Ambx.write [0xA1, Ambx::Lights::LEFT, 0x03, 255, 0, 0]
+```
+
+### Ambx class-method reference
+
+| Method | Description |
+|--------|-------------|
+| `Ambx.connect` | Scan USB tree for the amBX device; returns `true`/`false` |
+| `Ambx.open` | Open and claim the USB interface |
+| `Ambx.write(bytes_or_packet)` | Send a 6-byte command to all open handles |
+| `Ambx.close(clear_lights = false)` | Release the USB interface; optionally blanks all lights |
+| `Ambx.reconnect!(max_attempts: 3, delay: 1.0)` | Retry connect+open, useful in long-running apps |
+
+### Ambx::Packet
+
+```ruby
+Ambx::Packet.set_color(light_id, r, g, b)  # => Packet
+Ambx::Packet.set_fan(fan_id, speed)         # => Packet
+pkt.to_a                                    # => [0xA1, id, 0x03, r, g, b]
+pkt.bytes                                   # => same, frozen
+```
+
+Float arguments are rounded and clamped to `0..255` automatically.
+
+### Ambx::Lights constants
+
+```
+LEFT  = 0x0B    RIGHT = 0x1B
+WWLEFT = 0x2B   WWCENTER = 0x3B   WWRIGHT = 0x4B
+```
+
+### Ambx::Fans constants
+
+```
+LEFT = 0x5B  RIGHT = 0x6B
+```
+
+### Ambx::Rumbler constants
+
+```
+KEYBOARD = 0x7B
+```
+
+### Ambx::Protocol constants
+
+```
+USB_VENDOR_ID  = 0x0471    USB_PRODUCT_ID = 0x083F
+ENDPOINT_OUT   = 0x02      ENDPOINT_IN    = 0x81
+SET_LIGHT_COLOR          = 0x03
+SET_TIMED_COLOR_SEQUENCE = 0x72
+```
+
+### Additional USB device IDs
+
+`Ambx.connect` supports multiple devices and can match extra amBX-compatible USB IDs via
+`AMBX_USB_DEVICE_IDS`:
+
+```bash
+AMBX_USB_DEVICE_IDS=1234:abcd,0x5678:0x9abc bundle exec ruby your_app.rb
+```
+
+Format: comma-separated `vendor:product` hex pairs (with or without `0x` prefixes).
+
+---
+
+## Dependencies
+
+```
+Ruby  >= 3.0        (developed and tested on Ruby 4.0)
+libusb              system library — brew install libusb
+libusb gem          runtime dependency of libambx
+ruby-vips           required by repository apps only (not in the gem)
+```
+
+Full instructions: INSTALL
+
+---
+
+## Running the CLI tools
+
+```bash
+bundle exec ruby applications/setcolor/setcolor.rb 255 0 0   # all lights red
+bundle exec ruby applications/setcolor/setfan.rb 128          # fans at 50%
+```
+
+---
+
+## Testing
+
+Unit tests run without a physical device. All USB calls are stubbed.
+
+```bash
+bundle exec rake            # run all tests (default)
+bundle exec rake test       # explicit
+```
+
+The suite uses **minitest** with BDD-style `describe`/`it` blocks (`minitest/spec`).
+
+| Test file | What it covers |
+|-----------|----------------|
+| `test/unit/ambx/packet_test.rb` | Preamble, byte layout, clamping, float rounding, immutability |
+| `test/unit/ambx/protocol_test.rb` | All protocol constants, endpoint direction bits, compat alias |
+| `test/unit/ambx/lights_test.rb` | All light addresses, 0xB lower-nibble convention, compat alias |
+| `test/unit/ambx/driver_test.rb` | write, close, connect, reconnect! with fake USB handles |
+
+---
+
+## Project layout
+
+```
+libambx/
+  libambx.rb                  entrypoint (require this)
+  communication/ambx.rb       Ambx class — connect, open, write, close, reconnect!
+  data/protocoldefinitions.rb Ambx::Protocol
+  data/lights.rb              Ambx::Lights
+  ambx/packet.rb              Ambx::Packet value object
+
+applications/
+  menubar/                    macOS Platypus status-bar app
+  ambilight/                  screen-capture ambilight loop
+  boblight/                   Boblight protocol bridge
+  setcolor/                   setcolor.rb + setfan.rb CLIs
+  combustd/                   daemon stub (Phase 2)
+
+test/
+  test_helper.rb              LIBUSB stub, shared helpers
+  unit/ambx/                  unit tests (no hardware required)
+
+examples/
+  test-loop/                  quick smoke test — ruby test-loop.rb
+```
+
+---
 
 Enjoy!
-
-ps; for the newbs: cd examples/test-loop; ruby test-loop.rb
