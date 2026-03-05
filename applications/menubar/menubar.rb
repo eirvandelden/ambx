@@ -1,13 +1,13 @@
 #!/usr/bin/env ruby
 
 # Handle paths for both development and Platypus bundle
-if File.exist?(File.join(__dir__, "libcombustd"))
+if File.exist?(File.join(__dir__, "libambx"))
   # Running in Platypus bundle - files are in Resources/
-  require_relative "libcombustd/libcombustd"
+  require_relative "libambx/libambx"
   CONFIG_PATH = File.join(__dir__, "colors.yml")
 else
   # Running in development - use relative paths to project structure
-  require_relative "../../libcombustd/libcombustd"
+  require_relative "../../libambx/libambx"
   CONFIG_PATH = File.join(__dir__, "config/colors.yml")
 end
 
@@ -31,16 +31,16 @@ def set_all_lights(r, g, b)
   # Boost green channel and cap at 255
   g_boosted = [ g * GREEN_BOOST, 255 ].min.round
 
-  [ Lights::LEFT, Lights::WWLEFT, Lights::WWCENTER,
-   Lights::WWRIGHT, Lights::RIGHT ].each do |light_id|
+  [ Ambx::Lights::LEFT, Ambx::Lights::WWLEFT, Ambx::Lights::WWCENTER,
+   Ambx::Lights::WWRIGHT, Ambx::Lights::RIGHT ].each do |light_id|
     Ambx.write([ 0xA1, light_id, 0x03, r, g_boosted, b ])
   end
   Ambx.close
 end
 
-# Set fan speed (0-255) - user has 1 set of fans (LEFT_FAN)
+# Set fan speed (0-255) - user has 1 set of fans (Ambx::Fans::LEFT)
 def set_fan_speed(speed)
-  Ambx.write([ 0xA1, Lights::LEFT_FAN, 0x03, 0, 0, speed ])
+  Ambx.write([ 0xA1, Ambx::Fans::LEFT, 0x03, 0, 0, speed ])
   Ambx.close
 end
 

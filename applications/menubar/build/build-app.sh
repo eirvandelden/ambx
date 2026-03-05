@@ -15,7 +15,7 @@ platypus \
   --name "Ambx Lights" \
   --interface-type "Status Menu" \
   --interpreter "/usr/bin/ruby" \
-  --bundled-file "../../libcombustd" \
+  --bundled-file "../../libambx" \
   --bundled-file "../config/colors.yml" \
   --status-item-icon "icon.png" \
   --quit-after-execution false \
