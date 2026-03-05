@@ -1,0 +1,28 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "ignorePaths": [
+    "node_modules/**",
+    "vendor/**"
+  ],
+  "words": [
+    "Ambx",
+    "amBX",
+    "libambx",
+    "libcombustd",
+    "lefthook",
+    "rubocop",
+    "brakeman",
+    "boblight",
+    "combustd",
+    "Minitest",
+    "WWLEFT",
+    "WWCENTER",
+    "WWRIGHT",
+    "Madcatz",
+    "Cyborg",
+    "Platypus",
+    "oceanius",
+    "replug"
+  ]
+}
