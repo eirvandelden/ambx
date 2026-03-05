@@ -1,0 +1,4 @@
+pre-push:
+  commands:
+    brakeman:
+      run: bundle exec brakeman --quiet --no-pager --no-progress --no-summary --force
