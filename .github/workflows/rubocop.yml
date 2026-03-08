@@ -25,19 +25,14 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    # If running on a self-hosted runner, check it meets the requirements
-    # listed at https://github.com/ruby/setup-ruby#using-self-hosted-runners
-    - name: Set up Ruby
-      uses: ruby/setup-ruby@0a29871fe2b0200a17a4497bae54fe5df0d973aa # v1.115.3
+    - name: Set up rv
+      uses: spinel-coop/setup-rv@b64c562
       with:
-        ruby-version: 2.6
+        install-gems: true
 
     # This step is not necessary if you add the gem to your Gemfile
     - name: Install Code Scanning integration
       run: bundle add code-scanning-rubocop --version 0.3.0 --skip-install
-
-    - name: Install dependencies
-      run: bundle install
 
     - name: Rubocop run
       run: |
