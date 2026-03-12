@@ -1,0 +1,2 @@
+# Built macOS app bundles
+applications/menubar/build/*.app/
