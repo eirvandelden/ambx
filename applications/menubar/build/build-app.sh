@@ -1,7 +1,11 @@
 #!/bin/bash
 set -e
 
-cd "$(dirname "$0")"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+VENDOR_DIR="$SCRIPT_DIR/vendor/bundle"
+
+cd "$SCRIPT_DIR"
 
 # Check if Platypus is installed
 if ! command -v platypus &> /dev/null; then
@@ -10,12 +14,17 @@ if ! command -v platypus &> /dev/null; then
     exit 1
 fi
 
+# Vendor a standalone bundle so the app does not depend on /usr/bin/ruby gems.
+rm -rf "$VENDOR_DIR"
+(cd "$REPO_ROOT" && bundle install --standalone --path applications/menubar/build/vendor/bundle)
+
 # Build the Ambx Lights app
 platypus \
   --name "Ambx Lights" \
   --interface-type "Status Menu" \
   --interpreter "/usr/bin/ruby" \
-  --bundled-file "../../libcombustd" \
+  --bundled-file "../../libambx" \
+  --bundled-file "./vendor/bundle" \
   --bundled-file "../config/colors.yml" \
   --status-item-icon "icon.png" \
   --quit-after-execution false \
