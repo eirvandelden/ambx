@@ -52,16 +52,18 @@ def set_all_lights(r, g, b)
   true
 end
 
-# Set fan speed (0-255) - user has 1 set of fans (LEFT_FAN)
+# Set fan speed (0-255) for both fans
 # Returns true if fan speed was set successfully, false if connection was lost
 def set_fan_speed(speed)
-  Ambx.write([ 0xA1, Lights::LEFT_FAN, 0x03, 0, 0, speed ])
+  [ Lights::LEFT_FAN, Lights::RIGHT_FAN ].each do |fan_id|
+    Ambx.write([ 0xA1, fan_id, 0x03, 0, 0, speed ])
 
-  # Check if connection was lost during write
-  unless Ambx.connected?
-    return false unless Ambx.connect && Ambx.open
-    # Retry the write
-    return set_fan_speed(speed)
+    # Check if connection was lost during write
+    unless Ambx.connected?
+      return false unless Ambx.connect && Ambx.open
+      # Retry from the beginning to keep both fans in sync
+      return set_fan_speed(speed)
+    end
   end
 
   Ambx.close
@@ -88,7 +90,7 @@ def print_menu(connected)
 end
 
 # Main loop
-connected = Ambx.connect && Ambx.open
+connected = Ambx.connect
 
 # Print initial menu
 print_menu(connected)
