@@ -11,10 +11,15 @@ require "singleton"
 class Ambx
   include Singleton
 
+  # Light IDs eligible for brightness tracking and replay.
+  # Fans, rumble, and any future non-light outputs are excluded.
+  LIGHT_IDS = [ Lights::LEFT, Lights::RIGHT, Lights::WWLEFT, Lights::WWCENTER, Lights::WWRIGHT ].freeze
+
   @device      = nil # device in the usb tree
   @handle      = nil # device opened
   @devices     = []
   @handles     = nil
+  # Preserved across reconnects so reapply_brightness can restore state after a USB re-open.
   @light_state = {}
 
   class << self
@@ -103,6 +108,7 @@ class Ambx
     @device  = nil
     @handles = nil
     @devices = []
+    # @light_state is intentionally preserved so reapply_brightness works after reconnect.
   end
 
   def self.close_device(handle, clearLights = false)
@@ -123,6 +129,7 @@ class Ambx
   # Writes a set of bytes to the USB device.
   # Sends the provided bytes to all currently opened device handles.
   # If no handles are available, the call performs no action.
+  # Tracks unscaled source RGB for light commands so brightness can be reapplied correctly.
   #
   # @param [Array<Integer>] bytes Sequence of bytes (0-255) to send to the device.
   # @return [void]
@@ -131,41 +138,51 @@ class Ambx
   def self.write(bytes)
     return if @handles.nil? || @handles.all? { |handle| handle.nil? } # we lost it. see issue #1 on google code.
 
-    @handles.each do |handle|
-      next if handle.nil?
-
-      break unless Ambx.write_device(handle, bytes)
-    end
-  end
-
-  # Write a set of bytes to the usb device, this is our command string. Try to open it if necessarily.
-  # Returns false if the device was lost (ENXIO), true otherwise.
-  def self.write_device(handle, bytes)
-    # Track light state for brightness reapplication.
-    # Light writes: [0xA1, light_id, SET_LIGHT_COLOR, r, g, b]
-    if bytes[0] == 0xA1 && bytes[2] == ProtocolDefinitions::SET_LIGHT_COLOR
-      @light_state[bytes[1]] = [ bytes[3], bytes[4], bytes[5] ]
-    end
-
-    handle.interrupt_transfer(
-      endpoint: ProtocolDefinitions::ENDPOINT_OUT,
-      dataOut: bytes.pack("C*"),
-      timeout: 0
-    )
-    # quick fix to not immediately segfault, but wait for segfault when application quits.
-    # need a fix somewhere in ruby_usb, see issue #1 on google code.
-    true
-  rescue Errno::ENXIO
-    Ambx.close
-    false
+    record_source_light(bytes) if source_light_command?(bytes)
+    write_to_handles(bytes)
   end
 
   # Re-send all tracked lights at the current brightness level.
   # Called by BrightnessController.adjust after updating the multiplier.
+  # Uses write_to_handles directly to avoid re-tracking the scaled replay bytes.
   def self.reapply_brightness
     @light_state.each do |light_id, (r, g, b)|
-      write([ 0xA1, light_id, ProtocolDefinitions::SET_LIGHT_COLOR,
-             *BrightnessController.apply(r, g, b) ])
+      write_to_handles([ 0xA1, light_id, ProtocolDefinitions::SET_LIGHT_COLOR,
+                        *BrightnessController.apply(r, g, b) ])
+    end
+  end
+
+  class << self
+    private
+
+    def write_to_handles(bytes)
+      @handles.each { |handle| write_device(handle, bytes) if handle }
+    end
+
+    # Returns true only for light-color writes targeting a tracked light ID.
+    # Fans, rumble, and other non-light commands are excluded.
+    def source_light_command?(bytes)
+      bytes[0] == 0xA1 &&
+        bytes[2] == ProtocolDefinitions::SET_LIGHT_COLOR &&
+        LIGHT_IDS.include?(bytes[1])
+    end
+
+    # Stores the unscaled RGB for a light so reapply_brightness has the source values.
+    def record_source_light(bytes)
+      @light_state[bytes[1]] = [ bytes[3], bytes[4], bytes[5] ]
+    end
+
+    # Write a set of bytes to the usb device, this is our command string. Try to open it if necessarily.
+    def write_device(handle, bytes)
+      handle.interrupt_transfer(
+        endpoint: ProtocolDefinitions::ENDPOINT_OUT,
+        dataOut: bytes.pack("C*"),
+        timeout: 0
+      )
+      # quick fix to not immediately segfault, but wait for segfault when application quits.
+      # need a fix somewhere in ruby_usb, see issue #1 on google code.
+    rescue Errno::ENXIO
+      Ambx.close
     end
   end
 end

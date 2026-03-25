@@ -1,4 +1,5 @@
 ambx
+autorun
 Ambx
 AMBX
 AmbxInput
