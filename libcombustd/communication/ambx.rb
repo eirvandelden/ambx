@@ -156,6 +156,8 @@ class Ambx
     private
 
     def write_to_handles(bytes)
+      return if @handles.nil?
+
       @handles.each { |handle| write_device(handle, bytes) if handle }
     end
 

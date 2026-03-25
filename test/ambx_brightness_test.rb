@@ -59,6 +59,32 @@ class AmbxBrightnessTest < Minitest::Test
       "Fan commands must not be replayed when brightness changes"
   end
 
+  # BrightnessController.adjust must be a safe no-op when the device is disconnected.
+  # Before the fix, reapply_brightness called write_to_handles which called @handles.each
+  # on a nil value, raising NoMethodError and crashing the process.
+  def test_brightness_adjust_is_safe_noop_when_disconnected
+    Ambx.write(FULL_RED)
+    Ambx.instance_variable_set(:@handles, nil)
+
+    assert_silent { BrightnessController.adjust(-1) }
+  end
+
+  # If the device disconnects mid-replay (Errno::ENXIO nils out @handles inside write_device),
+  # the remaining iterations of reapply_brightness must not raise NoMethodError.
+  def test_mid_replay_disconnect_does_not_raise
+    disconnecting_handle = Object.new
+    def disconnecting_handle.close = nil
+    def disconnecting_handle.interrupt_transfer(**) = raise(Errno::ENXIO)
+
+    Ambx.instance_variable_set(:@handles, [ disconnecting_handle ])
+    Ambx.instance_variable_set(:@light_state, {
+      Lights::LEFT  => [ 200, 100, 50 ],
+      Lights::RIGHT => [ 50, 100, 200 ]
+    })
+
+    assert_silent { Ambx.reapply_brightness }
+  end
+
   class WhenMultipleLightsAreTracked < Minitest::Test
     def setup
       @handle = FakeHandle.new

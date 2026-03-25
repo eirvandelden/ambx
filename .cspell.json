@@ -17,7 +17,8 @@
     "WWRIGHT",
     "ENXIO",
     "autorun",
-    "minitest"
+    "minitest",
+    "protocoldefinitions"
   ],
   "ignorePaths": [
     "node_modules",
