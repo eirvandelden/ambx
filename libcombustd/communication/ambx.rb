@@ -11,10 +11,15 @@ require "singleton"
 class Ambx
   include Singleton
 
-  @device  = nil # device in the usb tree
-  @handle  = nil # device opened
-  @devices = []
-  @handles = nil
+  @device      = nil # device in the usb tree
+  @handle      = nil # device opened
+  @devices     = []
+  @handles     = nil
+  @light_state = {}
+
+  class << self
+    attr_reader :handles
+  end
 
   # Find the device by finding it in the device tree, fail if it's not connected
   def self.connect
@@ -136,6 +141,12 @@ class Ambx
   # Write a set of bytes to the usb device, this is our command string. Try to open it if necessarily.
   # Returns false if the device was lost (ENXIO), true otherwise.
   def self.write_device(handle, bytes)
+    # Track light state for brightness reapplication.
+    # Light writes: [0xA1, light_id, SET_LIGHT_COLOR, r, g, b]
+    if bytes[0] == 0xA1 && bytes[2] == ProtocolDefinitions::SET_LIGHT_COLOR
+      @light_state[bytes[1]] = [ bytes[3], bytes[4], bytes[5] ]
+    end
+
     handle.interrupt_transfer(
       endpoint: ProtocolDefinitions::ENDPOINT_OUT,
       dataOut: bytes.pack("C*"),
@@ -147,5 +158,14 @@ class Ambx
   rescue Errno::ENXIO
     Ambx.close
     false
+  end
+
+  # Re-send all tracked lights at the current brightness level.
+  # Called by BrightnessController.adjust after updating the multiplier.
+  def self.reapply_brightness
+    @light_state.each do |light_id, (r, g, b)|
+      write([ 0xA1, light_id, ProtocolDefinitions::SET_LIGHT_COLOR,
+             *BrightnessController.apply(r, g, b) ])
+    end
   end
 end

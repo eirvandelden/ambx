@@ -23,6 +23,12 @@ COLORS     = CONFIG['colors']
 FAN_SPEEDS = CONFIG['fan_speeds']
 GREEN_BOOST = CONFIG['green_boost'] || 1.0
 
+# TODO: Wire rotary gear integration once menubar is functional
+# AmbxInput.instance
+#   .on(:volume)     { |delta| MacOSIntegration.adjust_volume(delta) }
+#   .on(:brightness) { |delta| BrightnessController.adjust(delta) }
+#   .start_listening
+
 # Initialize USB connection — must both enumerate AND open/claim the device
 connected = init_ambx
 

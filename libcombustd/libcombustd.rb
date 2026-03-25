@@ -11,5 +11,11 @@ require REQUIREMENTPATH + "/data/lights"
 # Classes for logic
 require REQUIREMENTPATH + "/communication/ambx"
 
+# Rotary gear support
+require REQUIREMENTPATH + "/data/rotary_decoder"
+require REQUIREMENTPATH + "/integration/macos"
+require REQUIREMENTPATH + "/lighting/brightness_controller"
+require REQUIREMENTPATH + "/communication/ambx_input"
+
 # Classes for errors
 class CannotClaimInterfaceError < StandardError; end
