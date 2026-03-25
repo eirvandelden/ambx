@@ -2,30 +2,36 @@
 
 If you don't want to use the command-line tool, you can build the app using the Platypus GUI.
 
+## Prerequisites
+
+- Platypus installed: `brew install platypus`
+- All commands below assume you are in the root of the repository checkout.
+
 ## Steps
 
-1. **Open Platypus.app** from Applications or:
-   ```bash
-   open /opt/homebrew/Caskroom/platypus/5.5.0/Platypus.app
-   ```
+1. **Open Platypus.app** from Applications or Spotlight.
 
 2. **Configure the app:**
 
-   **Script Path**: Click "Select" and choose:
+   **Script Path**: Click "Select" and navigate to:
    ```
-   /Users/etienne.vandelden/Developer/conductor/workspaces/ambx/cambridge/applications/menubar/menubar.rb
+   applications/menubar/menubar.rb
    ```
 
    **Interface**: Select **"Status Menu"** from the dropdown
 
-   **Interpreter**: Select **"/usr/bin/ruby"** or type it in
+   **Interpreter**: Click "Select" and choose the Ruby interpreter used by the project.
+   To find the right path, run:
+   ```bash
+   which ruby
+   ```
 
 3. **Configure Status Menu:**
 
    - Click the "Status Menu" tab at the top
    - For **Status Item Icon**, click "Select" and choose:
      ```
-     /Users/etienne.vandelden/Developer/conductor/workspaces/ambx/cambridge/applications/menubar/build/icon.png
+     applications/menubar/build/icon.png
      ```
    - Leave other settings as default
 
@@ -37,12 +43,12 @@ If you don't want to use the command-line tool, you can build the app using the 
 
      **File 1**: libcombustd library
      ```
-     /Users/etienne.vandelden/Developer/conductor/workspaces/ambx/cambridge/libcombustd
+     libcombustd
      ```
 
      **File 2**: Colors configuration
      ```
-     /Users/etienne.vandelden/Developer/conductor/workspaces/ambx/cambridge/applications/menubar/config/colors.yml
+     applications/menubar/config/colors.yml
      ```
 
 5. **Configure App Settings:**
@@ -61,14 +67,14 @@ If you don't want to use the command-line tool, you can build the app using the 
 
 7. **Done!** Your app is now ready at:
    ```
-   /Users/etienne.vandelden/Developer/conductor/workspaces/ambx/cambridge/applications/menubar/build/Ambx Lights.app
+   applications/menubar/build/Ambx Lights.app
    ```
 
 ## Testing
 
 Launch the app:
 ```bash
-open "Ambx Lights.app"
+open "applications/menubar/build/Ambx Lights.app"
 ```
 
 The menubar icon should appear in your menu bar. Click it to see the menu with colors and fan speeds.
@@ -77,7 +83,7 @@ The menubar icon should appear in your menu bar. Click it to see the menu with c
 
 To install permanently:
 ```bash
-cp -r "Ambx Lights.app" /Applications/
+cp -r "applications/menubar/build/Ambx Lights.app" /Applications/
 ```
 
 To launch at startup:

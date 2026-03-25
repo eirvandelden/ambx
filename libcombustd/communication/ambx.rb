@@ -41,10 +41,21 @@ class Ambx
     return false if (@devices.nil? || @devices.all? { |dev| dev.nil? }) && !Ambx.connect
 
     @handles = @devices.map { |device| device.open }
-    # we retry a few times to open the device or kill it
-    if @handles.none? { |handle| handle.nil? }
-      @handles.each { |handle| Ambx.claim_interface(handle) }
+    if @handles.any?(&:nil?)
+      @handles.compact.each { |handle| Ambx.close_device(handle) }
+      @handles = nil
+      return false
     end
+
+    # we retry a few times to open the device or kill it
+    claimed = @handles.all? { |handle| Ambx.claim_interface(handle) }
+    unless claimed
+      @handles.each { |handle| Ambx.close_device(handle) }
+      @handles = nil
+      return false
+    end
+
+    true
   end
 
   # Try to claim interface
