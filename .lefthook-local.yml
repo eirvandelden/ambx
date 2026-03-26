@@ -3,4 +3,4 @@ pre-push:
     brakeman:
       run: brakeman --force --quiet --no-pager --no-progress --no-summary
     bundle-audit:
-      run: bin/bundler-audit check --update
+      run: bin/bundler-audit check
