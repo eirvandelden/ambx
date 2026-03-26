@@ -3,11 +3,11 @@
 MAX_RECONNECT_ATTEMPTS = 1
 
 STRINGS = {
-  title:        "Ambx Lights",
-  connected:    "✓ Connected",
-  disconnected: "⚠️ Disconnected",
-  turn_off:     "Turn Off Lights",
-  quit:         "QUIT"
+  title: 'Ambx Lights',
+  connected: '✓ Connected',
+  disconnected: '⚠️ Disconnected',
+  turn_off: 'Turn Off Lights',
+  quit: 'QUIT'
 }.freeze
 
 # Initialize USB connection
@@ -19,13 +19,13 @@ end
 # Applies green boost to compensate for dimmer green LEDs
 # Returns true if all lights were set successfully, false if connection was lost mid-write
 def set_all_lights(r, g, b)
-  g_boosted       = [ g * GREEN_BOOST, 255 ].min.round
+  g_boosted = [ g * GREEN_BOOST, 255 ].min.round
   reconnect_attempts = 0
 
   loop do
     lost = false
     [ Lights::LEFT, Lights::WWLEFT, Lights::WWCENTER,
-      Lights::WWRIGHT, Lights::RIGHT ].each do |light_id|
+     Lights::WWRIGHT, Lights::RIGHT ].each do |light_id|
       Ambx.write([ 0xA1, light_id, 0x03, r, g_boosted, b ])
       unless Ambx.connected?
         lost = true
@@ -74,14 +74,14 @@ end
 def print_menu(connected)
   status = connected ? STRINGS[:connected] : STRINGS[:disconnected]
   puts "#{STRINGS[:title]} (#{status})"
-  puts "---"
+  puts '---'
   puts STRINGS[:turn_off] if connected
-  puts "---" if connected
-  COLORS.each { |color| puts color["name"] }
+  puts '---' if connected
+  COLORS.each { |color| puts color['name'] }
   if connected
-    puts "---"
-    FAN_SPEEDS.each { |fan| puts fan["name"] }
+    puts '---'
+    FAN_SPEEDS.each { |fan| puts fan['name'] }
   end
-  puts "---"
+  puts '---'
   puts STRINGS[:quit]
 end
