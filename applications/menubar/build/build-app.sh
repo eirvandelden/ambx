@@ -19,39 +19,30 @@ else
     echo "❌ Platypus is not installed or CLI tool not found"
     echo "Install with: brew install platypus"
     echo ""
-    echo "After installation, you may need to install the CLI tool:"
+    echo "After installation, install the CLI tool:"
     echo "  Open Platypus.app → Preferences → Install CLI Tool"
-    echo "Or run the installer script:"
-    echo "  sudo /opt/homebrew/Caskroom/platypus/5.5.0/Platypus.app/Contents/Resources/InstallCommandLineTool.sh /opt/homebrew/Caskroom/platypus/5.5.0/Platypus.app/Contents/Resources"
     exit 1
 fi
 
 echo "Using Platypus CLI: $PLATYPUS_CLI"
 
-# Check if Platypus CLI resources are installed system-wide
-if [ ! -f "/usr/local/share/platypus/ScriptExec" ] && [[ "$PLATYPUS_CLI" == *"Caskroom"* ]]; then
-    echo ""
-    echo "⚠️  Platypus CLI resources not installed system-wide"
-    echo "Installing CLI tools (requires sudo)..."
+# Allow test overrides for the CLI path and resources check path
+if [ -n "$PLATYPUS_CLI_OVERRIDE" ]; then
+    PLATYPUS_CLI="$PLATYPUS_CLI_OVERRIDE"
+fi
+PLATYPUS_RESOURCES_CHECK="${PLATYPUS_RESOURCES_CHECK:-/usr/local/share/platypus/ScriptExec}"
 
+# Check if Platypus CLI resources are installed system-wide
+if [ ! -f "$PLATYPUS_RESOURCES_CHECK" ] && [[ "$PLATYPUS_CLI" == *"Caskroom"* ]]; then
     RESOURCES_DIR="$(dirname "$PLATYPUS_CLI")"
     INSTALL_SCRIPT="$RESOURCES_DIR/InstallCommandLineTool.sh"
-
-    if [ -f "$INSTALL_SCRIPT" ]; then
-        sudo "$INSTALL_SCRIPT" "$RESOURCES_DIR"
-        if [ $? -eq 0 ]; then
-            echo "✓ CLI tools installed successfully"
-        else
-            echo "❌ Failed to install CLI tools"
-            echo "Please run manually:"
-            echo "  sudo $INSTALL_SCRIPT $RESOURCES_DIR"
-            exit 1
-        fi
-    else
-        echo "❌ Install script not found at: $INSTALL_SCRIPT"
-        exit 1
-    fi
     echo ""
+    echo "❌ Platypus CLI resources not installed system-wide."
+    echo "Run the following command to install them, then re-run this script:"
+    echo ""
+    echo "  sudo \"$INSTALL_SCRIPT\" \"$RESOURCES_DIR\""
+    echo ""
+    exit 1
 fi
 
 # Detect Ruby interpreter (use current ruby with gem dependencies)
