@@ -15,7 +15,9 @@
     "WWLEFT",
     "WWCENTER",
     "WWRIGHT",
-    "ENXIO"
+    "ENXIO",
+    "autorun",
+    "minitest"
   ],
   "ignorePaths": [
     "node_modules",
