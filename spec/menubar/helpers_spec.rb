@@ -55,4 +55,30 @@ class MenubarHelpersTest < Minitest::Test
   def setup
     AmbxStub.reset!
   end
+
+  def test_init_ambx_returns_true_when_connect_and_open_succeed
+    AmbxStub.connect = true
+    AmbxStub.open    = true
+    assert init_ambx
+  end
+
+  def test_init_ambx_returns_false_when_connect_fails
+    AmbxStub.connect = false
+    refute init_ambx
+  end
+
+  def test_init_ambx_returns_false_when_open_fails
+    AmbxStub.connect = true
+    AmbxStub.open    = false
+    refute init_ambx
+  end
+
+  def test_print_menu_shows_disconnected_when_open_fails
+    AmbxStub.connect = true
+    AmbxStub.open    = false
+    connected = init_ambx
+    out = capture_io { print_menu(connected) }.first
+    assert_includes out, STRINGS[:disconnected]
+    refute_includes out, STRINGS[:connected]
+  end
 end

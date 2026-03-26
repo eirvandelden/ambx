@@ -24,8 +24,8 @@ COLORS     = CONFIG["colors"]
 FAN_SPEEDS = CONFIG["fan_speeds"]
 GREEN_BOOST = CONFIG["green_boost"] || 1.0
 
-# Initialize USB connection
-connected = Ambx.connect
+# Initialize USB connection — must both enumerate AND open/claim the device
+connected = init_ambx
 
 # Print initial menu
 print_menu(connected)
