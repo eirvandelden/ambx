@@ -12,7 +12,10 @@ STRINGS = {
 
 # Initialize USB connection
 def init_ambx
-  Ambx.connect && Ambx.open
+  return false unless Ambx.connect && Ambx.open
+
+  Ambx.close
+  true
 end
 
 # Set all lights to color (sent to both Ambx devices automatically)

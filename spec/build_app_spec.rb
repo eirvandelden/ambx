@@ -19,7 +19,8 @@ class BuildAppScriptTest < Minitest::Test
     FileUtils.mkdir_p(@resources_dir)
 
     fake_clt = File.join(@resources_dir, "platypus_clt")
-    File.write(fake_clt, "#!/bin/bash\necho 'platypus_clt called'\n")
+    @args_file = File.join(@tmpdir, "platypus_args.txt")
+    File.write(fake_clt, "#!/bin/bash\nprintf '%s\n' \"$@\" > \"$PLATYPUS_ARGS_FILE\"\necho 'platypus_clt called'\n")
     FileUtils.chmod(0o755, fake_clt)
     # Deliberately NOT creating InstallCommandLineTool.sh or ScriptExec
   end
@@ -38,7 +39,8 @@ class BuildAppScriptTest < Minitest::Test
     )
     env = {
       "PLATYPUS_CLI_OVERRIDE"      => fake_clt_path,
-      "PLATYPUS_RESOURCES_CHECK"   => File.join(@tmpdir, "nonexistent", "ScriptExec")
+      "PLATYPUS_RESOURCES_CHECK"   => File.join(@tmpdir, "nonexistent", "ScriptExec"),
+      "PLATYPUS_ARGS_FILE"         => @args_file
     }.merge(extra_env)
     Open3.capture3(env, BUILD_SCRIPT)
   end
@@ -68,5 +70,18 @@ class BuildAppScriptTest < Minitest::Test
     end
     refute exec_lines.any? { |l| l.match?(/\bsudo\b/) },
       "build-app.sh must not execute sudo — found sudo call outside echo/printf"
+  end
+
+  def test_bundles_menubar_helpers_into_app
+    resources_check = File.join(@tmpdir, "share", "platypus", "ScriptExec")
+    FileUtils.mkdir_p(File.dirname(resources_check))
+    File.write(resources_check, "")
+
+    _out, _err, status = run_script("PLATYPUS_RESOURCES_CHECK" => resources_check)
+
+    assert status.success?, "Expected fake Platypus CLI invocation to succeed"
+    args = File.readlines(@args_file, chomp: true)
+    assert_includes args, "../menubar_helpers.rb",
+      "Expected build-app.sh to bundle menubar_helpers.rb"
   end
 end

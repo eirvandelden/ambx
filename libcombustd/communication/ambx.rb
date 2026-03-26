@@ -14,6 +14,7 @@ class Ambx
   @device  = nil # device in the usb tree
   @handle  = nil # device opened
   @devices = []
+  @handles = nil
 
   # Find the device by finding it in the device tree, fail if it's not connected
   def self.connect
@@ -38,23 +39,23 @@ class Ambx
   # Open the device if it has been connected before.
   # If the device hasn't been opened yet, try to open it otherwise fail
   def self.open
+    return true if Ambx.connected?
     return false if (@devices.nil? || @devices.all? { |dev| dev.nil? }) && !Ambx.connect
 
-    @handles = @devices.map { |device| device.open }
-    if @handles.any?(&:nil?)
-      @handles.compact.each { |handle| Ambx.close_device(handle) }
-      @handles = nil
+    handles = @devices.map { |device| device.open }
+    if handles.any?(&:nil?)
+      handles.compact.each { |handle| Ambx.close_device(handle) }
       return false
     end
 
     # we retry a few times to open the device or kill it
-    claimed = @handles.all? { |handle| Ambx.claim_interface(handle) }
+    claimed = handles.all? { |handle| Ambx.claim_interface(handle) }
     unless claimed
-      @handles.each { |handle| Ambx.close_device(handle) }
-      @handles = nil
+      handles.each { |handle| Ambx.close_device(handle) }
       return false
     end
 
+    @handles = handles
     true
   end
 
