@@ -39,14 +39,19 @@ If you don't want to use the command-line tool, you can build the app using the 
 
    - Click the "Files" tab
    - Click the "+" button to add files
-   - Add the following two items:
+   - Add the following three items:
 
      **File 1**: libcombustd library
      ```
      libcombustd
      ```
 
-     **File 2**: Colors configuration
+     **File 2**: Menubar helpers
+     ```
+     applications/menubar/menubar_helpers.rb
+     ```
+
+     **File 3**: Colors configuration
      ```
      applications/menubar/config/colors.yml
      ```

@@ -55,6 +55,7 @@ echo "Using Ruby interpreter: $RUBY_INTERPRETER"
   --interface-type "Status Menu" \
   --interpreter "$RUBY_INTERPRETER" \
   --bundled-file "../../../libcombustd" \
+  --bundled-file "../menubar_helpers.rb" \
   --bundled-file "../config/colors.yml" \
   --status-item-icon "icon.png" \
   "../menubar.rb" \

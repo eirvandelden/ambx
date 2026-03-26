@@ -25,27 +25,33 @@ module AmbxStub
   @open       = true
   @connected  = true
   @write_log  = []
+  @close_calls = 0
 
   class << self
     attr_accessor :connect, :open, :connected
-    attr_reader :write_log
+    attr_reader :write_log, :close_calls
 
     def reset!
       @connect   = true
       @open      = true
       @connected = true
       @write_log = []
+      @close_calls = 0
       # Restore any singleton methods that tests may have overridden via define_singleton_method
       AmbxStub.define_singleton_method(:write)   { |bytes| @write_log << bytes }
       AmbxStub.define_singleton_method(:connect) { @connect }
       AmbxStub.define_singleton_method(:open)    { @open }
+      AmbxStub.define_singleton_method(:close)   { @close_calls += 1; nil }
     end
 
     def connect  = @connect
     def open     = @open
     def connected? = @connected
     def write(bytes) = @write_log << bytes
-    def close    = nil
+    def close
+      @close_calls += 1
+      nil
+    end
   end
 end
 
@@ -64,6 +70,14 @@ class MenubarHelpersTest < Minitest::Test
     AmbxStub.connect = true
     AmbxStub.open    = true
     assert init_ambx
+  end
+
+  def test_init_ambx_closes_handle_after_successful_probe
+    AmbxStub.connect = true
+    AmbxStub.open    = true
+
+    assert init_ambx
+    assert_equal 1, AmbxStub.close_calls
   end
 
   def test_init_ambx_returns_false_when_connect_fails
