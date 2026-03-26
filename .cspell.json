@@ -18,6 +18,7 @@
     "ENXIO",
     "autorun",
     "minitest",
+    "osascript",
     "protocoldefinitions"
   ],
   "ignorePaths": [
