@@ -19,34 +19,55 @@ end
 # Applies green boost to compensate for dimmer green LEDs
 # Returns true if all lights were set successfully, false if connection was lost mid-write
 def set_all_lights(r, g, b)
-  g_boosted = [ g * GREEN_BOOST, 255 ].min.round
+  g_boosted       = [ g * GREEN_BOOST, 255 ].min.round
+  reconnect_attempts = 0
 
-  [ Lights::LEFT, Lights::WWLEFT, Lights::WWCENTER,
-    Lights::WWRIGHT, Lights::RIGHT ].each do |light_id|
-    Ambx.write([ 0xA1, light_id, 0x03, r, g_boosted, b ])
-
-    unless Ambx.connected?
-      return false unless Ambx.connect && Ambx.open
-      return set_all_lights(r, g, b)
+  loop do
+    lost = false
+    [ Lights::LEFT, Lights::WWLEFT, Lights::WWCENTER,
+      Lights::WWRIGHT, Lights::RIGHT ].each do |light_id|
+      Ambx.write([ 0xA1, light_id, 0x03, r, g_boosted, b ])
+      unless Ambx.connected?
+        lost = true
+        break
+      end
     end
+
+    unless lost
+      Ambx.close
+      return true
+    end
+
+    reconnect_attempts += 1
+    return false if reconnect_attempts > MAX_RECONNECT_ATTEMPTS
+    return false unless Ambx.connect && Ambx.open
   end
-  Ambx.close
-  true
 end
 
 # Set fan speed (0-255) for both fans
 # Returns true if fan speed was set successfully, false if connection was lost
 def set_fan_speed(speed)
-  [ Lights::LEFT_FAN, Lights::RIGHT_FAN ].each do |fan_id|
-    Ambx.write([ 0xA1, fan_id, 0x03, 0, 0, speed ])
+  reconnect_attempts = 0
 
-    unless Ambx.connected?
-      return false unless Ambx.connect && Ambx.open
-      return set_fan_speed(speed)
+  loop do
+    lost = false
+    [ Lights::LEFT_FAN, Lights::RIGHT_FAN ].each do |fan_id|
+      Ambx.write([ 0xA1, fan_id, 0x03, 0, 0, speed ])
+      unless Ambx.connected?
+        lost = true
+        break
+      end
     end
+
+    unless lost
+      Ambx.close
+      return true
+    end
+
+    reconnect_attempts += 1
+    return false if reconnect_attempts > MAX_RECONNECT_ATTEMPTS
+    return false unless Ambx.connect && Ambx.open
   end
-  Ambx.close
-  true
 end
 
 # Output menu structure
