@@ -51,6 +51,7 @@ echo "Using Ruby interpreter: $RUBY_INTERPRETER"
 
 # Build the Ambx Lights app
 "$PLATYPUS_CLI" \
+  -y \
   --name "Ambx Lights" \
   --interface-type "Status Menu" \
   --interpreter "$RUBY_INTERPRETER" \
