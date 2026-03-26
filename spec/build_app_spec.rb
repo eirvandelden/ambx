@@ -84,4 +84,17 @@ class BuildAppScriptTest < Minitest::Test
     assert_includes args, "../menubar_helpers.rb",
       "Expected build-app.sh to bundle menubar_helpers.rb"
   end
+
+  def test_passes_overwrite_flag_for_repeat_builds
+    resources_check = File.join(@tmpdir, "share", "platypus", "ScriptExec")
+    FileUtils.mkdir_p(File.dirname(resources_check))
+    File.write(resources_check, "")
+
+    _out, _err, status = run_script("PLATYPUS_RESOURCES_CHECK" => resources_check)
+
+    assert status.success?, "Expected fake Platypus CLI invocation to succeed"
+    args = File.readlines(@args_file, chomp: true)
+    assert_includes args, "-y",
+      "Expected build-app.sh to pass Platypus' overwrite flag"
+  end
 end
