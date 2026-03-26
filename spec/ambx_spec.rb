@@ -32,11 +32,12 @@ module AmbxDeviceTestState
   end
 
   class FakeHandle
-    attr_reader :close_calls
+    attr_reader :close_calls, :transfer_calls
     attr_accessor :auto_detach_kernel_driver
 
     def initialize
       @close_calls = 0
+      @transfer_calls = 0
     end
 
     def claim_interface(_number)
@@ -48,7 +49,15 @@ module AmbxDeviceTestState
     end
 
     def interrupt_transfer(endpoint:, dataOut:, timeout:)
+      @transfer_calls += 1
       [ endpoint, dataOut, timeout ]
+    end
+  end
+
+  class FakeHandleRaisingENXIO < FakeHandle
+    def interrupt_transfer(endpoint:, dataOut:, timeout:)
+      @transfer_calls += 1
+      raise Errno::ENXIO
     end
   end
 
@@ -63,6 +72,14 @@ module AmbxDeviceTestState
 
     def open
       handle = FakeHandle.new
+      AmbxDeviceTestState.opened_handles << handle
+      handle
+    end
+  end
+
+  class FakeDeviceWithENXIOHandle < FakeDevice
+    def open
+      handle = FakeHandleRaisingENXIO.new
       AmbxDeviceTestState.opened_handles << handle
       handle
     end
@@ -98,5 +115,22 @@ class AmbxTest < Minitest::Test
     Ambx.close
 
     assert_equal 1, handle.close_calls
+  end
+
+  def test_write_does_not_crash_when_first_of_two_handles_raises_enxio
+    AmbxDeviceTestState.devices = [
+      AmbxDeviceTestState::FakeDeviceWithENXIOHandle.new,
+      AmbxDeviceTestState::FakeDevice.new
+    ]
+    assert Ambx.connect
+    assert Ambx.open
+
+    enxio_handle = AmbxDeviceTestState.opened_handles.fetch(0)
+    second_handle = AmbxDeviceTestState.opened_handles.fetch(1)
+
+    assert_silent { Ambx.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ]) }
+
+    assert_equal 1, enxio_handle.transfer_calls, "first handle should have been attempted"
+    assert_equal 0, second_handle.transfer_calls, "second handle must not be called after close"
   end
 end

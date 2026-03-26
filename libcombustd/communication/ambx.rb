@@ -129,11 +129,12 @@ class Ambx
     @handles.each do |handle|
       next if handle.nil?
 
-      Ambx.write_device(handle, bytes)
+      break unless Ambx.write_device(handle, bytes)
     end
   end
 
   # Write a set of bytes to the usb device, this is our command string. Try to open it if necessarily.
+  # Returns false if the device was lost (ENXIO), true otherwise.
   def self.write_device(handle, bytes)
     handle.interrupt_transfer(
       endpoint: ProtocolDefinitions::ENDPOINT_OUT,
@@ -142,7 +143,9 @@ class Ambx
     )
     # quick fix to not immediately segfault, but wait for segfault when application quits.
     # need a fix somewhere in ruby_usb, see issue #1 on google code.
+    true
   rescue Errno::ENXIO
     Ambx.close
+    false
   end
 end
