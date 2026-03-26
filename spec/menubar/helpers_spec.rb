@@ -142,4 +142,46 @@ class MenubarHelpersTest < Minitest::Test
     refute result
     assert AmbxStub.write_log.length <= (2 * (MAX_RECONNECT_ATTEMPTS + 1) + 1)
   end
+
+  def test_print_menu_uses_strings_title
+    out = capture_io { print_menu(true) }.first
+    assert_includes out, STRINGS[:title]
+  end
+
+  def test_print_menu_shows_connected_string_when_connected
+    out = capture_io { print_menu(true) }.first
+    assert_includes out, STRINGS[:connected]
+    refute_includes out, STRINGS[:disconnected]
+  end
+
+  def test_print_menu_shows_disconnected_string_when_not_connected
+    out = capture_io { print_menu(false) }.first
+    assert_includes out, STRINGS[:disconnected]
+    refute_includes out, STRINGS[:connected]
+  end
+
+  def test_print_menu_shows_turn_off_when_connected
+    out = capture_io { print_menu(true) }.first
+    assert_includes out, STRINGS[:turn_off]
+  end
+
+  def test_print_menu_hides_turn_off_when_disconnected
+    out = capture_io { print_menu(false) }.first
+    refute_includes out, STRINGS[:turn_off]
+  end
+
+  def test_print_menu_always_shows_quit
+    [ true, false ].each do |state|
+      out = capture_io { print_menu(state) }.first
+      assert_includes out, STRINGS[:quit]
+    end
+  end
+
+  def test_no_bare_string_literals_for_menu_labels_in_menubar_rb
+    source = File.read(File.expand_path("../../applications/menubar/menubar.rb", __dir__))
+    refute_includes source, '"Turn Off Lights"',
+      "menubar.rb must use STRINGS[:turn_off] instead of a bare string"
+    refute_includes source, '"QUIT"',
+      "menubar.rb must use STRINGS[:quit] instead of a bare string"
+  end
 end
