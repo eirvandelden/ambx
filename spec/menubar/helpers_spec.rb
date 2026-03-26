@@ -35,6 +35,10 @@ module AmbxStub
       @open      = true
       @connected = true
       @write_log = []
+      # Restore any singleton methods that tests may have overridden via define_singleton_method
+      AmbxStub.define_singleton_method(:write)   { |bytes| @write_log << bytes }
+      AmbxStub.define_singleton_method(:connect) { @connect }
+      AmbxStub.define_singleton_method(:open)    { @open }
     end
 
     def connect  = @connect
@@ -80,5 +84,62 @@ class MenubarHelpersTest < Minitest::Test
     out = capture_io { print_menu(connected) }.first
     assert_includes out, STRINGS[:disconnected]
     refute_includes out, STRINGS[:connected]
+  end
+
+  def test_set_all_lights_returns_true_when_connected_throughout
+    AmbxStub.connected = true
+    assert set_all_lights(255, 0, 0)
+  end
+
+  def test_set_all_lights_returns_false_when_reconnect_fails
+    # Device disconnects on first write, reconnect also fails
+    write_count = 0
+    AmbxStub.define_singleton_method(:write) do |bytes|
+      @write_log << bytes
+      @connected = false  # disconnect after every write
+    end
+    AmbxStub.connect = false  # reconnect will also fail
+
+    refute set_all_lights(255, 0, 0)
+  end
+
+  def test_set_all_lights_does_not_recurse_more_than_once
+    # Device disconnects after first write; reconnect succeeds but then
+    # disconnects again immediately. Must stop after MAX_RECONNECT_ATTEMPTS.
+    write_count = 0
+    AmbxStub.define_singleton_method(:write) do |bytes|
+      @write_log << bytes
+      @connected = false  # always disconnect after a write
+    end
+    AmbxStub.define_singleton_method(:connect) { true }
+    AmbxStub.define_singleton_method(:open)    { true }
+
+    # Should return false (gave up) rather than recurse indefinitely
+    result = set_all_lights(255, 0, 0)
+    refute result
+    # Total writes bounded: at most (5 lights * (MAX_RECONNECT_ATTEMPTS + 1)) + 1
+    assert AmbxStub.write_log.length <= (5 * (MAX_RECONNECT_ATTEMPTS + 1) + 1)
+  end
+
+  def test_set_fan_speed_returns_true_when_connected_throughout
+    AmbxStub.connected = true
+    assert set_fan_speed(128)
+  end
+
+  def test_set_fan_speed_returns_false_when_reconnect_fails
+    AmbxStub.define_singleton_method(:write) { |b| @write_log << b; @connected = false }
+    AmbxStub.connect = false
+
+    refute set_fan_speed(128)
+  end
+
+  def test_set_fan_speed_does_not_recurse_more_than_once
+    AmbxStub.define_singleton_method(:write) { |b| @write_log << b; @connected = false }
+    AmbxStub.define_singleton_method(:connect) { true }
+    AmbxStub.define_singleton_method(:open)    { true }
+
+    result = set_fan_speed(128)
+    refute result
+    assert AmbxStub.write_log.length <= (2 * (MAX_RECONNECT_ATTEMPTS + 1) + 1)
   end
 end
