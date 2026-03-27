@@ -8,4 +8,5 @@ group :development do
   gem "bundler-audit", require: false
   gem "minitest", require: false
   gem "rubocop", require: false
+  gem "rubocop-capybara", require: false
 end

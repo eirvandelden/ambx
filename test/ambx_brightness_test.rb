@@ -46,6 +46,17 @@ class AmbxBrightnessTest < Minitest::Test
       "After round-trip brightness adjustment the replayed color must match the original"
   end
 
+  # After the brightness level changes, newly written light colors must also be
+  # scaled. Before the fix, only reapply_brightness used the multiplier, so the
+  # next Ambx.write sent the raw unscaled RGB and effectively reset brightness.
+  def test_new_light_writes_respect_current_brightness_level
+    BrightnessController.adjust(-10) # 1.0 → 0.5
+    Ambx.write(FULL_RED)
+
+    assert_equal [ 0xA1, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 100, 50, 25 ], @handle.transfers.last,
+      "New writes must be scaled to the current brightness level"
+  end
+
   # Fan writes share the SET_LIGHT_COLOR command byte but must never enter the
   # brightness replay set.  Before the fix, fans were tracked and replayed with
   # their speed bytes passed through BrightnessController.apply.
