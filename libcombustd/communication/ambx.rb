@@ -138,9 +138,9 @@ class Ambx
 
     write_bytes = bytes
 
-    if source_light_command?(bytes)
-      record_source_light(bytes)
-      write_bytes = scaled_light_command(bytes)
+    if (command = tracked_light_command(bytes))
+      record_source_light(command)
+      write_bytes = scaled_light_command(bytes, command)
     end
 
     write_to_handles(write_bytes)
@@ -171,15 +171,28 @@ class Ambx
 
     # Returns true only for light-color writes targeting a tracked light ID.
     # Fans, rumble, and other non-light commands are excluded.
-    def source_light_command?(bytes)
+    def tracked_light_command(bytes)
+      return [ bytes[1], bytes[3], bytes[4], bytes[5] ] if six_byte_light_command?(bytes)
+      return [ bytes[0], bytes[2], bytes[3], bytes[4] ] if five_byte_light_command?(bytes)
+
+      nil
+    end
+
+    def six_byte_light_command?(bytes)
       bytes[0] == 0xA1 &&
         bytes[2] == ProtocolDefinitions::SET_LIGHT_COLOR &&
         tracked_light_ids.include?(bytes[1])
     end
 
+    def five_byte_light_command?(bytes)
+      bytes[1] == ProtocolDefinitions::SET_LIGHT_COLOR &&
+        tracked_light_ids.include?(bytes[0])
+    end
+
     # Stores the unscaled RGB for a light so reapply_brightness has the source values.
-    def record_source_light(bytes)
-      @light_state[bytes[1]] = [ bytes[3], bytes[4], bytes[5] ]
+    def record_source_light(command)
+      light_id, r, g, b = command
+      @light_state[light_id] = [ r, g, b ]
     end
 
     def tracked_light_ids
@@ -188,8 +201,9 @@ class Ambx
       end
     end
 
-    def scaled_light_command(bytes)
-      bytes[0, 3] + BrightnessController.apply(bytes[3], bytes[4], bytes[5])
+    def scaled_light_command(bytes, command)
+      _light_id, r, g, b = command
+      bytes[0...-3] + BrightnessController.apply(r, g, b)
     end
 
     # Write a set of bytes to the usb device, this is our command string. Try to open it if necessarily.

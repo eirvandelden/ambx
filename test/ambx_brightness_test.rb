@@ -57,6 +57,24 @@ class AmbxBrightnessTest < Minitest::Test
       "New writes must be scaled to the current brightness level"
   end
 
+  def test_legacy_five_byte_light_writes_respect_current_brightness_level
+    BrightnessController.adjust(-10) # 1.0 → 0.5
+    Ambx.write([ Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 100, 0, 0 ])
+
+    assert_equal [ Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 50, 0, 0 ], @handle.transfers.last,
+      "Legacy five-byte light writes must be scaled to the current brightness level"
+  end
+
+  def test_legacy_five_byte_light_writes_are_replayed_after_brightness_change
+    Ambx.write([ Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 100, 0, 0 ])
+    @handle.transfers.clear
+
+    BrightnessController.adjust(-10) # 1.0 → 0.5
+
+    assert_equal [ 0xA1, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 50, 0, 0 ], @handle.transfers.last,
+      "Legacy five-byte light writes must be replayed after a brightness change"
+  end
+
   # Fan writes share the SET_LIGHT_COLOR command byte but must never enter the
   # brightness replay set.  Before the fix, fans were tracked and replayed with
   # their speed bytes passed through BrightnessController.apply.
