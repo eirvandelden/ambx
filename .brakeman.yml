@@ -1,0 +1,3 @@
+---
+# This is not a Rails application; force allows brakeman to scan anyway.
+:force: true

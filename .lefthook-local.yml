@@ -1,0 +1,6 @@
+pre-push:
+  commands:
+    brakeman:
+      run: brakeman --force --quiet --no-pager --no-progress --no-summary
+    bundle-audit:
+      run: bin/bundler-audit check

@@ -1,0 +1,23 @@
+$schema: https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json
+version: "0.2"
+
+dictionaryDefinitions:
+  - name: user-dictionary
+    path: ~/.config/cspell/user-dictionary.txt
+    addWords: true
+
+  - name: project-dictionary
+    path: ./project-dictionary.txt
+    addWords: true
+
+dictionaries:
+  - en_us
+  - ruby
+  - softwareTerms
+  - user-dictionary
+  - project-dictionary
+
+ignorePaths:
+  - Gemfile
+  - Gemfile.lock
+  - project-dictionary.txt

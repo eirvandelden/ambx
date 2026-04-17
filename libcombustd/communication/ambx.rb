@@ -11,10 +11,18 @@ require "singleton"
 class Ambx
   include Singleton
 
-  @device  = nil # device in the usb tree
-  @handle  = nil # device opened
-  @devices = []
-  @handles = nil
+  TRACKED_LIGHT_NAMES = [ :LEFT, :RIGHT, :WWLEFT, :WWCENTER, :WWRIGHT ].freeze
+
+  @device      = nil # device in the usb tree
+  @handle      = nil # device opened
+  @devices     = []
+  @handles     = nil
+  # Preserved across reconnects so reapply_brightness can restore state after a USB re-open.
+  @light_state = {}
+
+  class << self
+    attr_reader :handles
+  end
 
   # Find the device by finding it in the device tree, fail if it's not connected
   def self.connect
@@ -98,6 +106,7 @@ class Ambx
     @device  = nil
     @handles = nil
     @devices = []
+    # @light_state is intentionally preserved so reapply_brightness works after reconnect.
   end
 
   def self.close_device(handle, clearLights = false)
@@ -118,6 +127,7 @@ class Ambx
   # Writes a set of bytes to the USB device.
   # Sends the provided bytes to all currently opened device handles.
   # If no handles are available, the call performs no action.
+  # Tracks unscaled source RGB for light commands so brightness can be reapplied correctly.
   #
   # @param [Array<Integer>] bytes Sequence of bytes (0-255) to send to the device.
   # @return [void]
@@ -126,26 +136,89 @@ class Ambx
   def self.write(bytes)
     return if @handles.nil? || @handles.all? { |handle| handle.nil? } # we lost it. see issue #1 on google code.
 
-    @handles.each do |handle|
-      next if handle.nil?
+    write_bytes = bytes
 
-      break unless Ambx.write_device(handle, bytes)
+    if (command = tracked_light_command(bytes))
+      record_source_light(command)
+      write_bytes = scaled_light_command(bytes, command)
+    end
+
+    write_to_handles(write_bytes)
+  end
+
+  # Re-send all tracked lights at the current brightness level.
+  # Called by BrightnessController.adjust after updating the multiplier.
+  # Uses write_to_handles directly to avoid re-tracking the scaled replay bytes.
+  def self.reapply_brightness
+    @light_state.each do |light_id, (r, g, b)|
+      write_to_handles([ 0xA1, light_id, ProtocolDefinitions::SET_LIGHT_COLOR,
+                        *BrightnessController.apply(r, g, b) ])
     end
   end
 
-  # Write a set of bytes to the usb device, this is our command string. Try to open it if necessarily.
-  # Returns false if the device was lost (ENXIO), true otherwise.
-  def self.write_device(handle, bytes)
-    handle.interrupt_transfer(
-      endpoint: ProtocolDefinitions::ENDPOINT_OUT,
-      dataOut: bytes.pack("C*"),
-      timeout: 0
-    )
-    # quick fix to not immediately segfault, but wait for segfault when application quits.
-    # need a fix somewhere in ruby_usb, see issue #1 on google code.
-    true
-  rescue Errno::ENXIO
-    Ambx.close
-    false
+  class << self
+    private
+
+    def write_to_handles(bytes)
+      return if @handles.nil?
+
+      @handles.each do |handle|
+        next unless handle
+
+        break unless write_device(handle, bytes)
+      end
+    end
+
+    # Returns true only for light-color writes targeting a tracked light ID.
+    # Fans, rumble, and other non-light commands are excluded.
+    def tracked_light_command(bytes)
+      return [ bytes[1], bytes[3], bytes[4], bytes[5] ] if six_byte_light_command?(bytes)
+      return [ bytes[0], bytes[2], bytes[3], bytes[4] ] if five_byte_light_command?(bytes)
+
+      nil
+    end
+
+    def six_byte_light_command?(bytes)
+      bytes[0] == 0xA1 &&
+        bytes[2] == ProtocolDefinitions::SET_LIGHT_COLOR &&
+        tracked_light_ids.include?(bytes[1])
+    end
+
+    def five_byte_light_command?(bytes)
+      bytes[1] == ProtocolDefinitions::SET_LIGHT_COLOR &&
+        tracked_light_ids.include?(bytes[0])
+    end
+
+    # Stores the unscaled RGB for a light so reapply_brightness has the source values.
+    def record_source_light(command)
+      light_id, r, g, b = command
+      @light_state[light_id] = [ r, g, b ]
+    end
+
+    def tracked_light_ids
+      TRACKED_LIGHT_NAMES.filter_map do |name|
+        Lights.const_get(name) if Lights.const_defined?(name, false)
+      end
+    end
+
+    def scaled_light_command(bytes, command)
+      _light_id, r, g, b = command
+      bytes[0...-3] + BrightnessController.apply(r, g, b)
+    end
+
+    # Write a set of bytes to the usb device, this is our command string. Try to open it if necessarily.
+    def write_device(handle, bytes)
+      handle.interrupt_transfer(
+        endpoint: ProtocolDefinitions::ENDPOINT_OUT,
+        dataOut: bytes.pack("C*"),
+        timeout: 0
+      )
+      # quick fix to not immediately segfault, but wait for segfault when application quits.
+      # need a fix somewhere in ruby_usb, see issue #1 on google code.
+      true
+    rescue Errno::ENXIO
+      Ambx.close
+      false
+    end
   end
 end
