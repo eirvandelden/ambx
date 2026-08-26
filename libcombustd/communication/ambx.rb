@@ -11,10 +11,7 @@ require "singleton"
 class Ambx
   include Singleton
 
-  @device  = nil # device in the usb tree
-  @handle  = nil # device opened
-  @devices = []
-  @handles = nil
+  @legacy_devices = []
 
   # Find the device by finding it in the device tree, fail if it's not connected
   def self.devices
@@ -25,44 +22,22 @@ class Ambx
 
   # Find the device by finding it in the device tree, fail if it's not connected
   def self.connect
-    @devices = []
-
-    LIBUSB::Context.new.devices.select do |dev|
-      dev.idVendor == ProtocolDefinitions::USB_VENDOR_ID && dev.idProduct == ProtocolDefinitions::USB_PRODUCT_ID
-    end.each do |dev|
-      if !@device.nil?
-        @device = dev
-        # break
-      end
-
-      @devices << dev
-
-      true
-    end
-
-    !@devices.empty?
+    @legacy_devices = devices
+    !@legacy_devices.empty?
   end
 
   # Open the device if it has been connected before.
   # If the device hasn't been opened yet, try to open it otherwise fail
   def self.open
     return true if Ambx.connected?
-    return false if (@devices.nil? || @devices.all? { |dev| dev.nil? }) && !Ambx.connect
+    return false if @legacy_devices.empty? && !Ambx.connect
 
-    handles = @devices.map { |device| device.open }
-    if handles.any?(&:nil?)
-      handles.compact.each { |handle| Ambx.close_device(handle) }
+    opened_devices = @legacy_devices.map(&:open)
+    if opened_devices.any?(false)
+      Ambx.close
       return false
     end
 
-    # we retry a few times to open the device or kill it
-    claimed = handles.all? { |handle| Ambx.claim_interface(handle) }
-    unless claimed
-      handles.each { |handle| Ambx.close_device(handle) }
-      return false
-    end
-
-    @handles = handles
     true
   end
 
@@ -92,19 +67,14 @@ class Ambx
   # Check if device handles are currently open and valid
   # @return [Boolean] true if connected with valid handles, false otherwise
   def self.connected?
-    !@handles.nil? && !@handles.all? { |handle| handle.nil? }
+    @legacy_devices.any?(&:connected?)
   end
 
   # Close the device if it is open.
   # set clearLights to true to try and set the lights back to 0x00
   def self.close (clearLights = false)
-    return if @handles.nil? || @handles.all? { |handle| handle.nil? }
-
-    @handles.each { |handle| Ambx.close_device(handle, clearLights) }
-
-    @device  = nil
-    @handles = nil
-    @devices = []
+    @legacy_devices.each { |device| device.close(clear_lights: clearLights) }
+    @legacy_devices = []
   end
 
   def self.close_device(handle, clearLights = false)
@@ -122,22 +92,33 @@ class Ambx
     end
   end
 
-  # Writes a set of bytes to the USB device.
-  # Sends the provided bytes to all currently opened device handles.
-  # If no handles are available, the call performs no action.
+  # Writes bytes to every device opened through the legacy broadcast facade.
+  # Stops at the first disconnected device and closes all legacy devices.
   #
   # @param [Array<Integer>] bytes Sequence of bytes (0-255) to send to the device.
-  # @return [void]
+  # @return [Boolean] true when every device accepted the transfer
   # @example Set WW center light to green
   #   Ambx.write([0x01, Lights::WWCENTER, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00])
-  def self.write(bytes)
-    return if @handles.nil? || @handles.all? { |handle| handle.nil? } # we lost it. see issue #1 on google code.
+  def self.write_all(bytes)
+    return false if @legacy_devices.empty?
 
-    @handles.each do |handle|
-      next if handle.nil?
+    @legacy_devices.each do |device|
+      next if device.write(bytes)
 
-      break unless Ambx.write_device(handle, bytes)
+      Ambx.close
+      return false
     end
+
+    true
+  end
+
+  def self.write(bytes)
+    unless @write_deprecation_warned
+      warn "Ambx.write is deprecated; use Ambx.write_all instead."
+      @write_deprecation_warned = true
+    end
+
+    write_all(bytes)
   end
 
   # Write a set of bytes to the usb device, this is our command string. Try to open it if necessarily.
