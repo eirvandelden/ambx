@@ -1,5 +1,11 @@
+PATH
+  remote: .
+  specs:
+    libambx (0.3.0)
+      libusb
+
 GEM
-  remote: https://gem.coop/
+  remote: https://rubygems.org/
   specs:
     ast (2.4.3)
     brakeman (7.1.0)
@@ -27,6 +33,7 @@ GEM
     prism (1.9.0)
     racc (1.8.1)
     rainbow (3.1.1)
+    rake (13.4.2)
     regexp_parser (2.10.0)
     rubocop (1.79.0)
       json (~> 2.3)
@@ -60,8 +67,9 @@ PLATFORMS
 DEPENDENCIES
   brakeman
   bundler-audit
-  libusb
+  libambx!
   minitest
+  rake
   rubocop
   ruby-vips
 
@@ -73,6 +81,7 @@ CHECKSUMS
   ffi (1.16.3) sha256=6d3242ff10c87271b0675c58d68d3f10148fabc2ad6da52a18123f06078871fb
   json (2.13.2) sha256=02e1f118d434c6b230a64ffa5c8dee07e3ec96244335c392eaed39e1199dbb68
   language_server-protocol (3.17.0.5) sha256=fd1e39a51a28bf3eec959379985a72e296e9f9acfce46f6a79d31ca8760803cc
+  libambx (0.3.0)
   libusb (0.7.1) sha256=90767fb4c1798daa05b64be717b67fc8c254cba5d484b1c54fbbf352ceb57f27
   lint_roller (1.1.0) sha256=2c0c845b632a7d172cb849cc90c1bce937a28c5c8ccccb50dfd46a485003cc87
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
@@ -83,6 +92,7 @@ CHECKSUMS
   prism (1.9.0) sha256=7b530c6a9f92c24300014919c9dcbc055bf4cdf51ec30aed099b06cd6674ef85
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
   rainbow (3.1.1) sha256=039491aa3a89f42efa1d6dec2fc4e62ede96eb6acd95e52f1ad581182b79bc6a
+  rake (13.4.2) sha256=cb825b2bd5f1f8e91ca37bddb4b9aaf345551b4731da62949be002fa89283701
   regexp_parser (2.10.0) sha256=cb6f0ddde88772cd64bff1dbbf68df66d376043fe2e66a9ef77fcb1b0c548c61
   rubocop (1.79.0) sha256=c709e83b16f9fced295d83d190a3a5bbcc46c419d8f9b85f259b99ba6faf5bbe
   rubocop-ast (1.46.0) sha256=0da7f6ad5b98614f89b74f11873c191059c823eae07d6ffd40a42a3338f2232b
