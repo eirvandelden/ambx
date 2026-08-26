@@ -19,6 +19,8 @@ end
 
 module LIBUSB
   class ERROR_NOT_FOUND < StandardError; end
+  class ERROR_BUSY < StandardError; end
+  class ERROR_OTHER < StandardError; end
 
   class Context
     def devices
@@ -41,8 +43,9 @@ module AmbxDeviceTestState
     attr_reader :claim_calls, :close_calls, :transfer_calls
     attr_accessor :auto_detach_kernel_driver
 
-    def initialize(claim_result: true)
+    def initialize(claim_result: true, claim_error: nil)
       @claim_result = claim_result
+      @claim_error = claim_error
       @claim_calls = 0
       @close_calls = 0
       @transfer_calls = 0
@@ -50,6 +53,8 @@ module AmbxDeviceTestState
 
     def claim_interface(_number)
       @claim_calls += 1
+      raise @claim_error if @claim_error
+
       @claim_result
     end
 
@@ -122,6 +127,22 @@ module AmbxDeviceTestState
   class FakeDeviceWithUnclaimableHandle < FakeDevice
     def open
       handle = FakeHandle.new(claim_result: nil)
+      AmbxDeviceTestState.opened_handles << handle
+      handle
+    end
+  end
+
+  class FakeDeviceWithBusyHandle < FakeDevice
+    def open
+      handle = FakeHandle.new(claim_error: LIBUSB::ERROR_BUSY.new)
+      AmbxDeviceTestState.opened_handles << handle
+      handle
+    end
+  end
+
+  class FakeDeviceWithUnexpectedClaimError < FakeDevice
+    def open
+      handle = FakeHandle.new(claim_error: LIBUSB::ERROR_OTHER.new)
       AmbxDeviceTestState.opened_handles << handle
       handle
     end
@@ -224,6 +245,15 @@ class AmbxTest < Minitest::Test
     assert_equal "port:4.8", string_port_device.identity
   end
 
+  def test_device_treats_question_mark_serial_number_as_unavailable
+    AmbxDeviceTestState.devices = [ AmbxDeviceTestState::FakeDevice.new(serial_number: "?", port_path: [ 3, 7 ]) ]
+
+    device = Ambx.devices.fetch(0)
+
+    assert_nil device.serial_number
+    assert_equal "port:3.7", device.identity
+  end
+
   def test_device_opens_and_closes_only_its_own_handle
     descriptor = AmbxDeviceTestState::FakeDevice.new
     AmbxDeviceTestState.devices = [ descriptor, AmbxDeviceTestState::FakeDevice.new ]
@@ -287,6 +317,30 @@ class AmbxTest < Minitest::Test
 
     handle = AmbxDeviceTestState.opened_handles.fetch(0)
     assert_equal 4, handle.claim_calls
+    assert_equal 1, handle.close_calls
+    refute device.connected?
+  end
+
+  def test_device_releases_its_handle_when_interface_is_busy
+    AmbxDeviceTestState.devices = [ AmbxDeviceTestState::FakeDeviceWithBusyHandle.new ]
+    device = Ambx.devices.fetch(0)
+
+    assert_equal false, device.open
+
+    handle = AmbxDeviceTestState.opened_handles.fetch(0)
+    assert_equal 4, handle.claim_calls
+    assert handle.auto_detach_kernel_driver
+    assert_equal 1, handle.close_calls
+    refute device.connected?
+  end
+
+  def test_device_reraises_unexpected_interface_claim_errors
+    AmbxDeviceTestState.devices = [ AmbxDeviceTestState::FakeDeviceWithUnexpectedClaimError.new ]
+    device = Ambx.devices.fetch(0)
+
+    assert_raises(LIBUSB::ERROR_OTHER) { device.open }
+
+    handle = AmbxDeviceTestState.opened_handles.fetch(0)
     assert_equal 1, handle.close_calls
     refute device.connected?
   end
