@@ -1,22 +1,9 @@
 require "minitest/autorun"
 
-class CannotClaimInterfaceError < StandardError; end
 class UnexpectedTransferError < StandardError; end
 
-module ProtocolDefinitions
-  USB_VENDOR_ID = 0x0471
-  USB_PRODUCT_ID = 0x083F
-  ENDPOINT_OUT = 0x02
-  SET_LIGHT_COLOR = 0x03
-end
-
-class Lights
-  LEFT = 0x0B
-  WWLEFT = 0x09
-  WWCENTER = 0x0A
-  WWRIGHT = 0x0C
-  RIGHT = 0x0D
-end
+require_relative "../libcombustd/data/protocoldefinitions"
+require_relative "../libcombustd/data/lights"
 
 module LIBUSB
   class ERROR_NOT_FOUND < StandardError; end
@@ -254,6 +241,19 @@ class AmbxTest < Minitest::Test
     assert_equal 1, second_handle.close_calls
   end
 
+  def test_legacy_open_closes_already_opened_devices_when_a_later_open_raises
+    AmbxDeviceTestState.devices = [
+      AmbxDeviceTestState::FakeDevice.new,
+      AmbxDeviceTestState::FakeDeviceWithUnexpectedClaimError.new
+    ]
+
+    assert_raises(LIBUSB::ERROR_OTHER) { Ambx.open }
+
+    first_handle = AmbxDeviceTestState.opened_handles.fetch(0)
+    assert_equal 1, first_handle.close_calls
+    refute Ambx.connected?
+  end
+
   def test_devices_discovers_only_matching_usb_descriptors_without_opening_them
     matching = AmbxDeviceTestState::FakeDevice.new(serial_number: "living-room")
     another_matching = AmbxDeviceTestState::FakeDevice.new(serial_number: "office")
@@ -270,7 +270,7 @@ class AmbxTest < Minitest::Test
     assert_empty AmbxDeviceTestState.opened_handles
   end
 
-  def test_device_identity_prefers_serial_then_port_path_then_bus_and_address
+  def test_device_identity_prefers_serial_then_port_path
     AmbxDeviceTestState.devices = [
       AmbxDeviceTestState::FakeDevice.new(serial_number: "set-1", port_path: [ 1, 2 ], bus_number: 3, device_address: 4),
       AmbxDeviceTestState::FakeDevice.new(port_path: [ 2, 5 ], bus_number: 3, device_address: 5),
@@ -284,7 +284,7 @@ class AmbxTest < Minitest::Test
     assert_equal [ 1, 2 ], serial_device.port_path
     assert_equal "port:2.5", port_device.identity
     assert_equal [ 2, 5 ], port_device.port_path
-    assert_equal "usb:4-6", usb_device.identity
+    assert_nil usb_device.identity
   end
 
   def test_device_uses_port_numbers_and_tolerates_an_unavailable_serial_number
@@ -418,6 +418,18 @@ class AmbxTest < Minitest::Test
     assert_equal 5, handle.transfer_calls
     assert_equal 1, handle.close_calls
     assert_equal 1, AmbxDeviceTestState.opened_handles.length
+  end
+
+  def test_device_close_with_clear_lights_handles_a_disconnect_during_clear
+    AmbxDeviceTestState.devices = [ AmbxDeviceTestState::FakeDeviceWithENXIOHandle.new ]
+    device = Ambx.devices.fetch(0).open
+    handle = AmbxDeviceTestState.opened_handles.fetch(0)
+
+    assert_silent { device.close(clear_lights: true) }
+
+    refute device.connected?
+    assert_equal 1, handle.transfer_calls
+    assert_equal 1, handle.close_calls
   end
 
   def test_device_releases_its_handle_when_interface_cannot_be_claimed
