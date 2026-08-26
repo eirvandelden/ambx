@@ -15,7 +15,7 @@ GEM
       thor (~> 1.0)
     drb (2.2.3)
     ffi (1.16.3)
-    json (2.13.2)
+    json (2.21.2)
     language_server-protocol (3.17.0.5)
     libusb (0.7.1)
       ffi (~> 1.0)
@@ -79,7 +79,7 @@ CHECKSUMS
   bundler-audit (0.9.2) sha256=73051daa09865c436450a35c4d87ceef15f3f9777f4aad4fd015cc6f1f2b1048
   drb (2.2.3) sha256=0b00d6fdb50995fe4a45dea13663493c841112e4068656854646f418fda13373
   ffi (1.16.3) sha256=6d3242ff10c87271b0675c58d68d3f10148fabc2ad6da52a18123f06078871fb
-  json (2.13.2) sha256=02e1f118d434c6b230a64ffa5c8dee07e3ec96244335c392eaed39e1199dbb68
+  json (2.21.2) sha256=1f1d3b7cf2b3ba1a69beca0bb6db13d5438b80bff3cd54cdaaa620b9b07c1c6a
   language_server-protocol (3.17.0.5) sha256=fd1e39a51a28bf3eec959379985a72e296e9f9acfce46f6a79d31ca8760803cc
   libambx (0.3.0)
   libusb (0.7.1) sha256=90767fb4c1798daa05b64be717b67fc8c254cba5d484b1c54fbbf352ceb57f27
