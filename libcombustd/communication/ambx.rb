@@ -78,7 +78,7 @@ class Ambx
 
       raise CannotClaimInterfaceError if error_code.nil? # TODO: libusb doesn't return anything on error
       true
-    rescue CannotClaimInterfaceError, LIBUSB::ERROR_BUSY
+    rescue CannotClaimInterfaceError
       if retries < max_retries
         handle.auto_detach_kernel_driver = true
         retries                         += 1

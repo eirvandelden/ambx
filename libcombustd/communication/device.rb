@@ -40,7 +40,7 @@ class Ambx
       handle = @descriptor.open
       return false if handle.nil?
 
-      unless Ambx.claim_interface(handle)
+      unless claim_interface(handle)
         close_handle(handle)
         return false
       end
@@ -85,6 +85,22 @@ class Ambx
     def close_handle(handle)
       handle.close
     rescue Errno::ENXIO
+    end
+
+    def claim_interface(handle)
+      retries = 0
+      max_retries = 3
+      begin
+        Ambx.claim_interface(handle)
+      rescue LIBUSB::ERROR_BUSY
+        if retries < max_retries
+          handle.auto_detach_kernel_driver = true
+          retries                         += 1
+          retry
+        else
+          false
+        end
+      end
     end
 
     def formatted_port_path

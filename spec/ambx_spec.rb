@@ -334,6 +334,15 @@ class AmbxTest < Minitest::Test
     refute device.connected?
   end
 
+  def test_legacy_claim_interface_reraises_busy_errors
+    handle = AmbxDeviceTestState::FakeHandle.new(claim_error: LIBUSB::ERROR_BUSY.new)
+
+    assert_raises(LIBUSB::ERROR_BUSY) { Ambx.claim_interface(handle) }
+
+    assert_equal 1, handle.claim_calls
+    refute handle.auto_detach_kernel_driver
+  end
+
   def test_device_reraises_unexpected_interface_claim_errors
     AmbxDeviceTestState.devices = [ AmbxDeviceTestState::FakeDeviceWithUnexpectedClaimError.new ]
     device = Ambx.devices.fetch(0)
