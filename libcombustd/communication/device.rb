@@ -18,6 +18,8 @@ class Ambx
       return @serial_number if defined?(@serial_number)
 
       @serial_number = @descriptor.serial_number
+      @serial_number = nil if @serial_number == "?"
+      @serial_number
     rescue NoMethodError, LIBUSB::ERROR_NOT_FOUND
       @serial_number = nil
     end
