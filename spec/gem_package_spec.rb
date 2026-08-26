@@ -26,6 +26,10 @@ class GemPackageTest < Minitest::Test
     assert_equal [ "Martijn de Boer (combustd@sexybiggetje.nl)", "Gert-Jan de Boer" ], specification.authors
     assert_equal Gem::Requirement.new(">= 3.1"), specification.required_ruby_version
     assert_equal [ "libusb" ], specification.runtime_dependencies.map(&:name)
+    assert_equal "https://github.com/eirvandelden/libamBX", specification.homepage
+    assert_equal "https://github.com/eirvandelden/libamBX", specification.metadata["source_code_uri"]
+    assert_equal "https://github.com/eirvandelden/libamBX/blob/main/CHANGELOG", specification.metadata["changelog_uri"]
+    assert_equal "https://github.com/eirvandelden/libamBX/issues", specification.metadata["bug_tracker_uri"]
   end
 
   def test_built_gem_contains_driver_and_attribution_without_applications_or_tests
@@ -47,6 +51,7 @@ class GemPackageTest < Minitest::Test
 
       refute contents.any? { |path| path.start_with?("applications/") }
       refute contents.any? { |path| path.start_with?("spec/") }
+      refute contents.any? { |path| path.start_with?("docs/") }
     end
   end
 end
