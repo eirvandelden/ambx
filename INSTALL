@@ -1,4 +1,22 @@
-Currently the combustd library and applications need a very generic set of dependencies. The core library only needs Ruby, libusb and the libusb gem available on your system. This makes it possible to run basically everywhere. Applications might have their own dependencies, for more information look for a INSTALL file in it's respective directory.
+# Installing libambx
+
+`libambx` is the publishable continuation of the original Combustd driver.
+The core library needs Ruby 3.1 or newer, libusb available on the system, and
+the `libusb` Ruby gem. Install a published release with:
+
+```sh
+gem install libambx
+```
+
+To develop from this checkout:
+
+```sh
+bundle install
+bundle exec rake test
+```
+
+The original Combustd applications may have their own dependencies; look for
+an `INSTALL` file in their respective directories.
 
 Installing these dependencies might be as trivial as using your package manager (apt, aptitude, yum, ports, fink, etc.), if these fail or are missing request them at your maintainer or choose to install them from source.
 
