@@ -11,7 +11,7 @@ class Ambx
       return "serial:#{serial_number}" unless serial_number.to_s.empty?
       return "port:#{formatted_port_path}" unless formatted_port_path.empty?
 
-      "usb:#{@descriptor.bus_number}-#{@descriptor.device_address}"
+      nil
     end
 
     def serial_number
@@ -40,13 +40,7 @@ class Ambx
       handle = @descriptor.open
       return false if handle.nil?
 
-      unless claim_interface(handle)
-        close_handle(handle)
-        return false
-      end
-
-      @handle = handle
-      self
+      claim(handle)
     rescue StandardError
       close_handle(handle) if handle
       raise
@@ -59,52 +53,55 @@ class Ambx
     def write(bytes)
       return false unless connected?
 
-      @handle.interrupt_transfer(
+      return true if transfer(@handle, bytes)
+
+      close
+      false
+    end
+
+    def close(clear_lights: false)
+      handle = @handle
+      return unless handle
+
+      @handle = nil
+      clear_all_lights(handle) if clear_lights
+      close_handle(handle)
+    end
+
+    private
+
+    def claim(handle)
+      return close_unclaimed_handle(handle) unless Ambx.claim_interface(handle, retry_busy: true)
+
+      @handle = handle
+      self
+    end
+
+    def close_unclaimed_handle(handle)
+      close_handle(handle)
+      false
+    end
+
+    def clear_all_lights(handle)
+      CLEAR_LIGHTS.each do |light|
+        break unless transfer(handle, [ 0xA1, light, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0x00, 0x00 ])
+      end
+    end
+
+    def transfer(handle, bytes)
+      handle.interrupt_transfer(
         endpoint: ProtocolDefinitions::ENDPOINT_OUT,
         dataOut: bytes.pack("C*"),
         timeout: 0
       )
       true
     rescue Errno::ENXIO
-      close
       false
-    end
-
-    def close(clear_lights: false)
-      return unless connected?
-
-      clear_all_lights if clear_lights
-      close_handle(@handle)
-      @handle = nil
-    end
-
-    private
-
-    def clear_all_lights
-      CLEAR_LIGHTS.each do |light|
-        write([ 0xA1, light, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0x00, 0x00 ])
-      end
     end
 
     def close_handle(handle)
       handle.close
     rescue Errno::ENXIO
-    end
-
-    def claim_interface(handle)
-      retries = 0
-      max_retries = 3
-      begin
-        Ambx.claim_interface(handle)
-      rescue LIBUSB::ERROR_BUSY
-        if retries < max_retries
-          handle.auto_detach_kernel_driver = true
-          retries                         += 1
-          retry
-        else
-          false
-        end
-      end
     end
 
     def formatted_port_path

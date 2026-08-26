@@ -32,18 +32,22 @@ identity for configuration and owns only its own USB handle.
 ```ruby
 require "libambx"
 
-Ambx.devices.each do |device|
-  device.open
-  device.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 255, 0, 0 ])
-ensure
-  device&.close
+device = Ambx.devices.first
+
+if device&.open
+  begin
+    device.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 255, 0, 0 ])
+  ensure
+    device.close
+  end
 end
 ```
 
 `device.identity` prefers the USB serial number and falls back to its USB port
-path. `Device#write` returns `false` when that device disappears; other open
-devices remain available. This driver reports requested writes only and does
-not read actual light state back from the hardware.
+path. It is `nil` when neither is available, so callers must not persist a
+bus-and-address fallback. `Device#write` returns `false` when that device
+disappears; other open devices remain available. This driver reports requested
+writes only and does not read actual light state back from the hardware.
 
 ## Legacy broadcast compatibility
 
