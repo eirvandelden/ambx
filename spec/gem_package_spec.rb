@@ -1,6 +1,8 @@
 require "minitest/autorun"
 require "open3"
 require "rbconfig"
+require "rubygems/package"
+require "tmpdir"
 
 class GemPackageTest < Minitest::Test
   def test_canonical_entry_point_loads_the_driver_and_version
@@ -24,5 +26,27 @@ class GemPackageTest < Minitest::Test
     assert_equal [ "Martijn de Boer (combustd@sexybiggetje.nl)", "Gert-Jan de Boer" ], specification.authors
     assert_equal Gem::Requirement.new(">= 3.1"), specification.required_ruby_version
     assert_equal [ "libusb" ], specification.runtime_dependencies.map(&:name)
+  end
+
+  def test_built_gem_contains_driver_and_attribution_without_applications_or_tests
+    Dir.mktmpdir do |directory|
+      gem_path = File.join(directory, "libambx-0.3.0.gem")
+      output, status = Open3.capture2("gem", "build", "--output", gem_path, "libambx.gemspec")
+
+      assert status.success?, output
+
+      contents = Gem::Package.new(gem_path).contents
+      %w[
+        AUTHORS
+        LICENSE
+        lib/libambx.rb
+        lib/libcombustd/libcombustd.rb
+        libcombustd/communication/ambx.rb
+        libcombustd/communication/device.rb
+      ].each { |path| assert_includes contents, path }
+
+      refute contents.any? { |path| path.start_with?("applications/") }
+      refute contents.any? { |path| path.start_with?("spec/") }
+    end
   end
 end

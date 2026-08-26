@@ -9,6 +9,21 @@ This gem provides low-level access to each physically connected amBX USB set.
 Home Assistant support will live in the separate `ambx2mqtt` project; it is
 not published or runnable from this repository yet.
 
+## Install
+
+After a RubyGems release, install the driver with:
+
+```sh
+gem install libambx
+```
+
+For development from this checkout:
+
+```sh
+bundle install
+bundle exec rake test
+```
+
 ## Using one physical USB set
 
 Discovering devices does not open them. Each returned device has a stable
