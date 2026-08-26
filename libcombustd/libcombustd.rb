@@ -9,6 +9,7 @@ require REQUIREMENTPATH + "/data/protocoldefinitions"
 require REQUIREMENTPATH + "/data/lights"
 
 # Classes for logic
+require REQUIREMENTPATH + "/communication/device"
 require REQUIREMENTPATH + "/communication/ambx"
 
 # Classes for errors
