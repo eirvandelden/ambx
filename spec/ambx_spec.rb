@@ -1,6 +1,7 @@
 require "minitest/autorun"
 
 class CannotClaimInterfaceError < StandardError; end
+class UnexpectedTransferError < StandardError; end
 
 module ProtocolDefinitions
   USB_VENDOR_ID = 0x0471
@@ -75,6 +76,13 @@ module AmbxDeviceTestState
     end
   end
 
+  class FakeHandleRaisingUnexpectedTransferError < FakeHandle
+    def interrupt_transfer(endpoint:, dataOut:, timeout:)
+      @transfer_calls += 1
+      raise UnexpectedTransferError
+    end
+  end
+
   class FakeDevice
     attr_reader :bus_number, :device_address, :port_path
 
@@ -119,6 +127,14 @@ module AmbxDeviceTestState
   class FakeDeviceWithENXIOHandle < FakeDevice
     def open
       handle = FakeHandleRaisingENXIO.new
+      AmbxDeviceTestState.opened_handles << handle
+      handle
+    end
+  end
+
+  class FakeDeviceWithUnexpectedTransferErrorHandle < FakeDevice
+    def open
+      handle = FakeHandleRaisingUnexpectedTransferError.new
       AmbxDeviceTestState.opened_handles << handle
       handle
     end
@@ -295,6 +311,60 @@ class AmbxTest < Minitest::Test
     second_device.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ])
 
     assert_equal 1, second_handle.transfer_calls
+  end
+
+  def test_device_write_returns_true_after_a_successful_transfer
+    device = Ambx.devices.fetch(0).open
+    handle = AmbxDeviceTestState.opened_handles.fetch(0)
+
+    assert_equal true, device.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ])
+
+    assert device.connected?
+    assert_equal 1, handle.transfer_calls
+    assert_equal 0, handle.close_calls
+  end
+
+  def test_device_write_isolates_an_enxio_disconnect_from_other_devices_and_global_ambx
+    global_descriptor = AmbxDeviceTestState::FakeDevice.new
+    AmbxDeviceTestState.devices = [ global_descriptor ]
+    assert Ambx.connect
+    assert Ambx.open
+    global_handle = AmbxDeviceTestState.opened_handles.fetch(0)
+
+    first_device = Ambx::Device.new(AmbxDeviceTestState::FakeDeviceWithENXIOHandle.new).open
+    second_device = Ambx::Device.new(AmbxDeviceTestState::FakeDevice.new).open
+    first_handle, second_handle = AmbxDeviceTestState.opened_handles.last(2)
+
+    assert_equal false, first_device.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ])
+
+    refute first_device.connected?
+    assert second_device.connected?
+    assert Ambx.connected?
+    assert_equal 1, first_handle.transfer_calls
+    assert_equal 1, first_handle.close_calls
+    assert_equal 0, second_handle.transfer_calls
+    assert_equal 0, second_handle.close_calls
+    assert_equal 0, global_handle.transfer_calls
+    assert_equal 0, global_handle.close_calls
+
+    assert_equal true, second_device.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ])
+
+    assert_equal 1, second_handle.transfer_calls
+    assert_equal 0, second_handle.close_calls
+  end
+
+  def test_device_write_reraises_unexpected_transfer_errors_and_stays_connected
+    AmbxDeviceTestState.devices = [ AmbxDeviceTestState::FakeDeviceWithUnexpectedTransferErrorHandle.new ]
+    device = Ambx.devices.fetch(0).open
+    handle = AmbxDeviceTestState.opened_handles.fetch(0)
+
+    assert_raises(UnexpectedTransferError) do
+      device.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ])
+    end
+
+    assert device.connected?
+    assert_equal 1, handle.transfer_calls
+    assert_equal 0, handle.close_calls
   end
 
   def test_device_clear_lights_writes_five_commands_to_its_own_handle

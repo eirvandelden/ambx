@@ -57,13 +57,17 @@ class Ambx
     end
 
     def write(bytes)
-      return unless connected?
+      return false unless connected?
 
       @handle.interrupt_transfer(
         endpoint: ProtocolDefinitions::ENDPOINT_OUT,
         dataOut: bytes.pack("C*"),
         timeout: 0
       )
+      true
+    rescue Errno::ENXIO
+      close
+      false
     end
 
     def close(clear_lights: false)
