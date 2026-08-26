@@ -246,6 +246,27 @@ class AmbxTest < Minitest::Test
     assert_equal 1, handle.close_calls
   end
 
+  def test_closing_one_device_does_not_disconnect_or_write_to_another_device
+    AmbxDeviceTestState.devices = [ AmbxDeviceTestState::FakeDevice.new, AmbxDeviceTestState::FakeDevice.new ]
+    first_device, second_device = Ambx.devices
+    first_device.open
+    second_device.open
+
+    first_handle, second_handle = AmbxDeviceTestState.opened_handles
+    first_device.close
+
+    refute first_device.connected?
+    assert second_device.connected?
+    assert_equal 1, first_handle.close_calls
+    assert_equal 0, first_handle.transfer_calls
+    assert_equal 0, second_handle.close_calls
+    assert_equal 0, second_handle.transfer_calls
+
+    second_device.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ])
+
+    assert_equal 1, second_handle.transfer_calls
+  end
+
   def test_device_clear_lights_writes_five_commands_to_its_own_handle
     AmbxDeviceTestState.devices = [ AmbxDeviceTestState::FakeDevice.new, AmbxDeviceTestState::FakeDevice.new ]
     device = Ambx.devices.fetch(0).open
