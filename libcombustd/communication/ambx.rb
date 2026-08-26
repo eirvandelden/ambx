@@ -17,6 +17,13 @@ class Ambx
   @handles = nil
 
   # Find the device by finding it in the device tree, fail if it's not connected
+  def self.devices
+    LIBUSB::Context.new.devices.filter_map do |dev|
+      Device.new(dev) if dev.idVendor == ProtocolDefinitions::USB_VENDOR_ID && dev.idProduct == ProtocolDefinitions::USB_PRODUCT_ID
+    end
+  end
+
+  # Find the device by finding it in the device tree, fail if it's not connected
   def self.connect
     @devices = []
 
@@ -64,22 +71,22 @@ class Ambx
     retries = 0
     max_retries = 3
     begin
-      error_code = handle.claim_interface(0)
-    rescue ArgumentError
-    end
+      begin
+        error_code = handle.claim_interface(0)
+      rescue ArgumentError
+      end
 
-    raise CannotClaimInterfaceError if error_code.nil? # TODO: libusb doesn't return anything on error
-    return true
-  rescue CannotClaimInterfaceError
-    if retries < max_retries
-      handle.auto_detach_kernel_driver = true
-      retries                         += 1
-      retry
-    else
-      false
+      raise CannotClaimInterfaceError if error_code.nil? # TODO: libusb doesn't return anything on error
+      true
+    rescue CannotClaimInterfaceError
+      if retries < max_retries
+        handle.auto_detach_kernel_driver = true
+        retries                         += 1
+        retry
+      else
+        false
+      end
     end
-  else
-    false
   end
 
   # Check if device handles are currently open and valid
@@ -149,3 +156,5 @@ class Ambx
     false
   end
 end
+
+require_relative "device"
