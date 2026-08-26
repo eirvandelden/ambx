@@ -1,12 +1,46 @@
-Combustd - A crossplatform toolkit for Ambx or compatible devices
+# libambx
 
-This application has been created in order to make the Ambx product usable on platforms outside the scope of Ambx's target group. Most of the project has been set up to create applications outside the normal usage pattern. Go wild, let your idea's flow. Make that usb controlled build monitor, access the your lights from the web. Use the power of the web to create controllable lights to indicate visitors. Use it for system monitoring.
+`libambx` is the Ruby USB driver for Philips amBX lights and compatible
+devices. It was originally created as **Combustd** by Martijn de Boer and
+Gert-Jan de Boer; its original BSD 3-Clause licence and attribution are
+preserved in this repository.
 
-If you like this project, please consider how much you could contribute to it.
-All code in this project is licensed under the very liberal and fair BSD license unless specified otherwise, see the LICENSE file for more information.
+This gem provides low-level access to each physically connected amBX USB set.
+Home Assistant support will live in the separate `ambx2mqtt` project; it is
+not published or runnable from this repository yet.
 
-For dependencies read the file INSTALL.
+## Using one physical USB set
 
-Enjoy!
+Discovering devices does not open them. Each returned device has a stable
+identity for configuration and owns only its own USB handle.
 
-ps; for the newbs: cd examples/test-loop; ruby test-loop.rb
+```ruby
+require "libambx"
+
+Ambx.devices.each do |device|
+  device.open
+  device.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 255, 0, 0 ])
+ensure
+  device&.close
+end
+```
+
+`device.identity` prefers the USB serial number and falls back to its USB port
+path. `Device#write` returns `false` when that device disappears; other open
+devices remain available. This driver reports requested writes only and does
+not read actual light state back from the hardware.
+
+## Legacy broadcast compatibility
+
+Existing applications can keep using `Ambx.connect`, `Ambx.open`, and
+`Ambx.close`. Use `Ambx.write_all(bytes)` to explicitly broadcast a command to
+every set opened through that legacy facade.
+
+`Ambx.write(bytes)` remains as a deprecated alias for one compatibility
+release and prints a migration warning once per process. A legacy broadcast
+stops and closes its legacy device collection if one set disconnects.
+
+## Development
+
+See [INSTALL](INSTALL). The project keeps the original Combustd examples and
+applications where they remain supported.

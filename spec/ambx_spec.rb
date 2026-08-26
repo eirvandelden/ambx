@@ -196,7 +196,7 @@ class AmbxTest < Minitest::Test
     assert_equal 1, handle.close_calls
   end
 
-  def test_write_does_not_crash_when_first_of_two_handles_raises_enxio
+  def test_write_all_stops_and_closes_legacy_devices_when_first_write_disconnects
     AmbxDeviceTestState.devices = [
       AmbxDeviceTestState::FakeDeviceWithENXIOHandle.new,
       AmbxDeviceTestState::FakeDevice.new
@@ -207,10 +207,51 @@ class AmbxTest < Minitest::Test
     enxio_handle = AmbxDeviceTestState.opened_handles.fetch(0)
     second_handle = AmbxDeviceTestState.opened_handles.fetch(1)
 
-    assert_silent { Ambx.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ]) }
+    assert_equal false, Ambx.write_all([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ])
 
     assert_equal 1, enxio_handle.transfer_calls, "first handle should have been attempted"
     assert_equal 0, second_handle.transfer_calls, "second handle must not be called after close"
+    assert_equal 1, enxio_handle.close_calls
+    assert_equal 1, second_handle.close_calls
+    refute Ambx.connected?
+  end
+
+  def test_write_all_broadcasts_to_each_legacy_device
+    AmbxDeviceTestState.devices = [ AmbxDeviceTestState::FakeDevice.new, AmbxDeviceTestState::FakeDevice.new ]
+    assert Ambx.connect
+    assert Ambx.open
+
+    first_handle, second_handle = AmbxDeviceTestState.opened_handles
+
+    assert_equal true, Ambx.write_all([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ])
+
+    assert_equal 1, first_handle.transfer_calls
+    assert_equal 1, second_handle.transfer_calls
+  end
+
+  def test_write_warns_once_and_delegates_to_write_all
+    assert Ambx.connect
+    assert Ambx.open
+
+    warning = "Ambx.write is deprecated; use Ambx.write_all instead.\n"
+    assert_output("", warning) do
+      assert_equal true, Ambx.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ])
+      assert_equal true, Ambx.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ])
+    end
+  end
+
+  def test_legacy_close_clears_each_device_once
+    AmbxDeviceTestState.devices = [ AmbxDeviceTestState::FakeDevice.new, AmbxDeviceTestState::FakeDevice.new ]
+    assert Ambx.connect
+    assert Ambx.open
+
+    first_handle, second_handle = AmbxDeviceTestState.opened_handles
+    Ambx.close(true)
+
+    assert_equal 5, first_handle.transfer_calls
+    assert_equal 5, second_handle.transfer_calls
+    assert_equal 1, first_handle.close_calls
+    assert_equal 1, second_handle.close_calls
   end
 
   def test_devices_discovers_only_matching_usb_descriptors_without_opening_them

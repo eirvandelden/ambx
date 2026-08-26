@@ -1,3 +1,14 @@
-Version 0.2:
+# Version 0.3.0
+
+- Publish the former Combustd driver as the `libambx` gem while retaining
+  original attribution and the BSD 3-Clause licence.
+- Add `Ambx.devices` and `Ambx::Device` for independent physical USB sets with
+  stable identities.
+- Isolate expected USB disconnects to the affected `Ambx::Device`.
+- Add explicit `Ambx.write_all`; `Ambx.write` is deprecated for one
+  compatibility release.
+
+# Version 0.2
+
   Added patch from jaaps at xbmc.org forums.
   For configuration see: http://forum.xbmc.org/showthread.php?t=71912&page=2
