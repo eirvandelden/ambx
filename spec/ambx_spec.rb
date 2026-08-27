@@ -74,7 +74,8 @@ module AmbxDeviceTestState
     attr_reader :bus_number, :device_address, :port_path
 
     def initialize(vendor_id: ProtocolDefinitions::USB_VENDOR_ID, product_id: ProtocolDefinitions::USB_PRODUCT_ID,
-      serial_number: nil, serial_error: nil, port_path: nil, port_numbers: nil, bus_number: 1, device_address: 2, handle: FakeHandle)
+      serial_number: nil, serial_error: nil, port_path: nil, port_numbers: nil, bus_number: 1,
+      device_address: 2, handle: FakeHandle)
       @vendor_id = vendor_id
       @product_id = product_id
       @serial_number = serial_number
@@ -272,7 +273,8 @@ class AmbxTest < Minitest::Test
 
   def test_device_identity_prefers_serial_then_port_path
     AmbxDeviceTestState.devices = [
-      AmbxDeviceTestState::FakeDevice.new(serial_number: "set-1", port_path: [ 1, 2 ], bus_number: 3, device_address: 4),
+      AmbxDeviceTestState::FakeDevice.new(serial_number: "set-1", port_path: [ 1, 2 ], bus_number: 3,
+device_address: 4),
       AmbxDeviceTestState::FakeDevice.new(port_path: [ 2, 5 ], bus_number: 3, device_address: 5),
       AmbxDeviceTestState::FakeDevice.new(bus_number: 4, device_address: 6)
     ]
@@ -376,7 +378,8 @@ class AmbxTest < Minitest::Test
     second_device = Ambx::Device.new(AmbxDeviceTestState::FakeDevice.new).open
     first_handle, second_handle = AmbxDeviceTestState.opened_handles.last(2)
 
-    assert_equal false, first_device.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ])
+    assert_equal false,
+first_device.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ])
 
     refute first_device.connected?
     assert second_device.connected?
@@ -388,7 +391,8 @@ class AmbxTest < Minitest::Test
     assert_equal 0, global_handle.transfer_calls
     assert_equal 0, global_handle.close_calls
 
-    assert_equal true, second_device.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ])
+    assert_equal true,
+second_device.write([ 0x01, Lights::LEFT, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0xFF, 0x00 ])
 
     assert_equal 1, second_handle.transfer_calls
     assert_equal 0, second_handle.close_calls

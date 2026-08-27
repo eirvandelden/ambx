@@ -87,7 +87,8 @@ def update_lights(zone_colors)
     zone_colors.each_with_index do |color, index|
       r, g, b = color
       # Assuming AmBX has a method `set_light(zone, r, g, b)` to update light colors
-      Ambx.write_all([ light_mapping[index.to_s.to_sym], 0x03, r, g, b ]) # Send the RGB color to the corresponding light
+      # Send the RGB color to the corresponding light
+      Ambx.write_all([ light_mapping[index.to_s.to_sym], 0x03, r, g, b ])
     end
     Ambx.close
   end

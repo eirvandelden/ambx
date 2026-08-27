@@ -70,6 +70,17 @@ class Ambx
 
     private
 
+    def formatted_port_path
+      path = port_path
+      return "" if empty_port_path?(path)
+
+      path.is_a?(Array) ? path.join(".") : path.to_s.tr("/", ".")
+    end
+
+    def empty_port_path?(path)
+      path.nil? || (path.respond_to?(:empty?) && path.empty?)
+    end
+
     def claim(handle)
       return close_unclaimed_handle(handle) unless Ambx.claim_interface(handle, retry_busy: true)
 
@@ -82,10 +93,9 @@ class Ambx
       false
     end
 
-    def clear_all_lights(handle)
-      CLEAR_LIGHTS.each do |light|
-        break unless transfer(handle, [ 0xA1, light, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0x00, 0x00 ])
-      end
+    def close_handle(handle)
+      handle.close
+    rescue Errno::ENXIO
     end
 
     def transfer(handle, bytes)
@@ -99,20 +109,10 @@ class Ambx
       false
     end
 
-    def close_handle(handle)
-      handle.close
-    rescue Errno::ENXIO
-    end
-
-    def formatted_port_path
-      path = port_path
-      return "" if empty_port_path?(path)
-
-      path.is_a?(Array) ? path.join(".") : path.to_s.tr("/", ".")
-    end
-
-    def empty_port_path?(path)
-      path.nil? || (path.respond_to?(:empty?) && path.empty?)
+    def clear_all_lights(handle)
+      CLEAR_LIGHTS.each do |light|
+        break unless transfer(handle, [ 0xA1, light, ProtocolDefinitions::SET_LIGHT_COLOR, 0x00, 0x00, 0x00 ])
+      end
     end
   end
 end

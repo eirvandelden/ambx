@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "rake/testtask"
 
 test_tasks = FileList["spec/**/*_spec.rb"].map do |file|
