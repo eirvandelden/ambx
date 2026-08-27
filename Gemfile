@@ -8,5 +8,5 @@ group :development do
   gem "bundler-audit", require: false
   gem "minitest", require: false
   gem "rake", require: false
-  gem "rubocop", require: false
+  gem "rubocop-eirvandelden", github: "eirvandelden/rubocop-eirvandelden", require: false
 end
