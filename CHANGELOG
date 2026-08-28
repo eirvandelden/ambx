@@ -1,3 +1,8 @@
+# Version 0.4.0
+
+- Require Ruby 3.4 or newer. The locked bundler already needed 3.2, so the
+  previous 3.1 floor was not something any build could stand on.
+
 # Version 0.3.0
 
 - Publish the former Combustd driver as the `libambx` gem while retaining
