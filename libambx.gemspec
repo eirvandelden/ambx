@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.email = [ "combustd@sexybiggetje.nl" ]
   spec.homepage = "https://github.com/eirvandelden/libamBX"
   spec.license = "BSD-3-Clause"
-  spec.required_ruby_version = ">= 3.1"
+  spec.required_ruby_version = ">= 3.4"
 
   spec.metadata = {
     "source_code_uri" => "https://github.com/eirvandelden/libamBX",

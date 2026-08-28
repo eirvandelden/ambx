@@ -15,7 +15,7 @@ class GemPackageTest < Minitest::Test
 
     assert status.success?, output
     assert_includes output, "Ambx\n"
-    assert_equal "0.3.0", output.lines.last.strip
+    assert_equal "0.4.0", output.lines.last.strip
   end
 
   def test_gemspec_describes_the_libambx_package
@@ -24,7 +24,7 @@ class GemPackageTest < Minitest::Test
     assert_equal "libambx", specification.name
     assert_equal [ "BSD-3-Clause" ], specification.licenses
     assert_equal [ "Martijn de Boer (combustd@sexybiggetje.nl)", "Gert-Jan de Boer" ], specification.authors
-    assert_equal Gem::Requirement.new(">= 3.1"), specification.required_ruby_version
+    assert_equal Gem::Requirement.new(">= 3.4"), specification.required_ruby_version
     assert_equal [ "libusb" ], specification.runtime_dependencies.map(&:name)
     assert_equal "https://github.com/eirvandelden/libamBX", specification.homepage
     assert_equal "https://github.com/eirvandelden/libamBX", specification.metadata["source_code_uri"]
