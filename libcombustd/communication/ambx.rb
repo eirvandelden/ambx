@@ -17,7 +17,7 @@ class Ambx
 
   # Find the device by finding it in the device tree, fail if it's not connected
   def self.devices
-    LIBUSB::Context.new.devices.filter_map do |dev|
+    usb_connection.devices.filter_map do |dev|
       Device.new(dev) if dev.idVendor == ProtocolDefinitions::USB_VENDOR_ID && dev.idProduct == ProtocolDefinitions::USB_PRODUCT_ID
     end
   end
@@ -116,7 +116,13 @@ class Ambx
     true
   end
 
-  private_class_method :claim_interface_result, :retry_claim_interface?
+  # The connection to the USB subsystem outlives every scan, so the devices handed
+  # out by a scan stay usable for as long as the caller keeps them.
+  def self.usb_connection
+    @usb_connection ||= LIBUSB::Context.new
+  end
+
+  private_class_method :claim_interface_result, :retry_claim_interface?, :usb_connection
 end
 
 require_relative "device"

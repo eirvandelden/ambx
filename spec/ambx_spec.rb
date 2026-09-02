@@ -11,6 +11,10 @@ module LIBUSB
   class ERROR_OTHER < StandardError; end
 
   class Context
+    def initialize
+      AmbxDeviceTestState.usb_connections_opened += 1
+    end
+
     def devices
       AmbxDeviceTestState.devices
     end
@@ -19,11 +23,12 @@ end
 
 module AmbxDeviceTestState
   class << self
-    attr_accessor :devices, :opened_handles
+    attr_accessor :devices, :opened_handles, :usb_connections_opened
 
     def reset!
       @opened_handles = []
       @devices = [ FakeDevice.new ]
+      @usb_connections_opened = 0
     end
   end
 
@@ -269,6 +274,15 @@ class AmbxTest < Minitest::Test
     assert_equal "office", devices.fetch(1).serial_number
     refute_same devices.fetch(0), Ambx.devices.fetch(0)
     assert_empty AmbxDeviceTestState.opened_handles
+  end
+
+  def test_scanning_for_controllers_many_times_shares_one_usb_connection
+    Ambx.devices
+    connections_after_first_scan = AmbxDeviceTestState.usb_connections_opened
+
+    4.times { Ambx.devices }
+
+    assert_equal connections_after_first_scan, AmbxDeviceTestState.usb_connections_opened
   end
 
   def test_device_identity_prefers_serial_then_port_path
