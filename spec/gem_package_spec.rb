@@ -15,7 +15,7 @@ class GemPackageTest < Minitest::Test
 
     assert status.success?, output
     assert_includes output, "Ambx\n"
-    assert_equal "0.4.0", output.lines.last.strip
+    assert_equal "0.4.1", output.lines.last.strip
   end
 
   def test_gemspec_describes_the_libambx_package
