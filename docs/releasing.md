@@ -1,60 +1,68 @@
 # Releasing libambx
 
-This runbook prepares a RubyGems release without publishing it accidentally.
-Only a maintainer with the intended RubyGems credentials may run the final
-`gem push` command.
+This gem is not published on RubyGems. Callers depend on it straight from GitHub — `ambx2mqtt`
+asks for `gem "libambx", github: "eirvandelden/libamBX"` — and Bundler pins the revision it
+resolved in the caller's own lockfile. A release is therefore a merge to `main`; there is nothing
+to push and no tag to cut.
+
+The version and the changelog are the whole announcement: they are how someone pinned to an older
+revision learns what changed and why to move.
 
 ## Prepare the release
 
-1. Update `Libambx::VERSION` in `lib/libambx/version.rb` and add a matching
-   entry to `CHANGELOG`.
-2. Confirm the working tree contains only intended changes.
+1. Update `Libambx::VERSION` in `lib/libambx/version.rb`, add a matching entry to `CHANGELOG`, and
+   bump the version the packaging test expects in `spec/gem_package_spec.rb`.
+
+2. Refresh this repository's own lockfile. The gem is a path gem in its own `Gemfile`, so a version
+   bump leaves `Gemfile.lock` naming the old one, and the frozen install in CI refuses to carry on.
+
+   ```sh
+   bundle install
+   ```
+
+   Confirm the diff shows the new version, and beware a `bundle` binstub from another checkout on
+   your `PATH`: it resolves that checkout's `Gemfile` instead of this one and does nothing here.
+
+3. Confirm the working tree contains only intended changes.
 
    ```sh
    git status --short
    ```
 
-3. Run the complete local suite.
+4. Run the complete local suite.
 
    ```sh
    bundle exec rake test
+   bundle exec rubocop
    ```
 
-4. Build the artifact and inspect its manifest. Do not publish at this step.
+5. Prove the canonical entry point loads and reports the new version, the way a caller gets it.
 
    ```sh
-   gem build libambx.gemspec
-   ruby -rrubygems/package -e 'puts Gem::Package.new(ARGV.fetch(0)).contents' libambx-<version>.gem
+   ruby -Ilib -e 'require "libambx"; puts Libambx::VERSION'
    ```
 
-   Confirm the archive contains the canonical `lib/libambx.rb`, the legacy
-   compatibility loader, `libcombustd/`, `AUTHORS`, and `LICENSE`; it must not
-   contain applications or test files.
-
-5. Install exactly that artifact in a clean temporary gem home and load it.
+6. Confirm the gemspec still hands out everything a caller needs and nothing it should not.
 
    ```sh
-   RELEASE_GEM_HOME="$(mktemp -d)"
-   GEM_HOME="$RELEASE_GEM_HOME" GEM_PATH="$RELEASE_GEM_HOME" gem install --local --no-document libambx-<version>.gem
-   GEM_HOME="$RELEASE_GEM_HOME" GEM_PATH="$RELEASE_GEM_HOME" ruby -e 'require "libambx"; abort Libambx::VERSION unless Libambx::VERSION == "<version>"'
+   ruby -e 'puts Gem::Specification.load("libambx.gemspec").files'
    ```
 
-6. Immediately before publishing, ensure the intended RubyGems name is still
-   available (or that you are deliberately publishing a new version of the
-   existing gem).
-
-   ```sh
-   gem search --remote --exact libambx
-   ```
+   Expect the canonical `lib/libambx.rb`, the legacy compatibility loader, `libcombustd/`,
+   `AUTHORS`, `CHANGELOG`, `LICENSE`, and `README`; it must not list applications or test files.
 
 ## Publish
 
-Authenticate to RubyGems using the maintainer's normal credential mechanism,
-then explicitly publish the inspected artifact:
+Merge to `main`. Callers pick the release up on their next `bundle update libambx`, which rewrites
+the revision in their lockfile.
+
+Verify against a caller before calling it done:
 
 ```sh
-gem push libambx-<version>.gem
+cd ~/Developer/ambx2mqtt
+bundle update libambx
+git diff Gemfile.lock
+bundle exec rake test
 ```
 
-Do not run `gem push` from automated tests or an unattended script. Record the
-published version and tag/commit in the release announcement.
+The lockfile diff should name the merge commit and the new version.

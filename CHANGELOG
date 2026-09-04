@@ -1,3 +1,10 @@
+# Version 0.4.1
+
+- Scanning for controllers no longer leaks a connection to the USB subsystem.
+  Long-running callers that scanned on a timer were affected: they lost the
+  ability to see any hardware after roughly an hour, then the process died on
+  a native assertion. Anyone pinned to 0.4.0 should move.
+
 # Version 0.4.0
 
 - Require Ruby 3.4 or newer. The locked bundler already needed 3.2, so the
